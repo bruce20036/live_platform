@@ -1,13 +1,13 @@
 import sys, signal
 import configfile
-import uuid
+import uuid, time
 from box.zmq_box import zmq_MEDIA_BOX, zmq_PUB_BOX
 
 
 def stop_thread(signum, frame):
     global media_box
     global publish_box
-    
+    print("stop")
     ###Stop thread and wait it to join in
     media_box.stop()
     publish_box.stop()
@@ -28,14 +28,15 @@ if __name__ == '__main__':
     print("Your Box ID: "+box_id)
     
     #Create MEDIA_BOX and PUB_BOX thread and run it
-    publish_box = zmq_PUB_BOX(box_id, IP, PORT)
-    publish_box.run(configfile.ZMQ_MT_TOPIC)
-    media_box = zmq_MEDIA_BOX(box_id)
-    media_box.run()
     
+    publish_box = zmq_PUB_BOX(box_id, IP, PORT, configfile.ZMQ_MT_TOPIC)
+    publish_box.start()
+    media_box = zmq_MEDIA_BOX(box_id, IP, PORT)
+    media_box.start()
     
     #set signal to stop when CTRL+C occurs
     signal.signal(signal.SIGINT, stop_thread)
+ 
     
     
     

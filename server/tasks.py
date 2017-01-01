@@ -1,17 +1,35 @@
-import requests
-import random, time, subprocess, logging
-import zmq
+import os, random, time, subprocess, logging
+import zmq, redis
 import configfile
 from start_celery import app
 
+def logmsg(msg):
+    logging.basicConfig(format='%(asctime)s Message: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.warning(msg)
+    
 
 @app.task
 def mpd_trans(pathname):
     ### Connect to redis in order to get box's queryset
-    redis = redis.StrictRedis()
+    rdb = redis.StrictRedis()
     random.seed(int(time.time()))
-    box = random.choice(redis.keys("box*"))
-    ip_s, port_s = redis.hmget(box, "IP", "PORT")
+    
+    ### GET a list of box, try 5 times , if there's no avaiable box then log error and return
+    test = 5
+    while test>0:
+        box_list = rdb.keys("box*")
+        if len(box_list)>0:
+            break;
+        time.sleep(1)
+        test-=1
+        
+    if len(box_list) == 0:
+        logmsg("mpd_trans: No box in list")
+        return
+    
+    box = random.choice(box_list)
+    
+    ip_s, port_s = rdb.hmget(box, "IP", "PORT")
     ip = "http://"+ip_s+":"+port_s+"/"
     ip_mpd = "http://"+ip_s+":"+"8000"+"/"
     
@@ -19,20 +37,19 @@ def mpd_trans(pathname):
     path, basename = pathname.rsplit('/', 1)
     dir_name, stream_name = path.rsplit('/', 1)
     
+    #open read file
+    try:
+       infile = open(pathname,"r")
+    except IOError:
+        logmsg(' IOError in mpd_trans().')
+        return
+    
     #mpd output path
     output_folder = os.path.join(configfile.MPD_WRITE_DIR, stream_name)
     output_dir = os.path.join(output_folder, basename)
     #Check if the dir is created
     if not os.path.isdir(output_folder):
         subprocess.check_output(['mkdir', '-p', output_folder])
-    
-    #open read file
-    try:
-        infile = open(pathname,"r")
-    except IOError:
-        logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-        logging.warning(' IOError in mpd_trans().')
-        return
  
     #open output file
     if not os.path.exists(output_dir):
@@ -42,6 +59,7 @@ def mpd_trans(pathname):
     outfile.seek(0)
     
     line = infile.readline()
+    part=1
 
     while line:
         if "<S t=" in line:
@@ -52,7 +70,7 @@ def mpd_trans(pathname):
             else:
                 media_path = path+"/"+time_name+".m4a"
             
-            send_media_to_box.delay(box, media_path)
+            send_media_to_box.delay(box, ip_s, port_s, media_path)
                 
         elif "media" in line:
             pre_str, post_str = line.split("\"", 1)
@@ -76,9 +94,8 @@ def mpd_trans(pathname):
             else:
                 media_path = path + "/init.m4a"
             
-            send_media_to_box.delay(box, media_path)
+            send_media_to_box.delay(box, ip_s, port_s, media_path)
            
-        
         elif "audio/mp4" in line:
             part = 2
             outfile.write(line)
@@ -95,24 +112,31 @@ def mpd_trans(pathname):
 
 
 @app.task
-def send_media_to_box(box_id, media_path):    
+def send_media_to_box(box_id, box_ip, box_port, media_path):
+    
+    ###unicode -> str (send_multipart can't handle unicode format)
+    box_id = str(box_id)
+    media_path = str(media_path)
+    
+    ### OPEN MEDIA FILE in read binary mode
+    try:
+        infile = open(media_path,"rb")
+    except:
+        logmsg("send_media_to_box can't open %s"%(media_path))
+        return
+    
     ### Create zmq instance and bind to tcp
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
-    socket.bind(configfile.ZMQ_MEDIA_DISTRIBUTE_TCP)
-    
-    ### OPEN MEDIA FILE in read binary mode
-    infile = open(media_path,"rb")
-    
+    socket.connect("tcp://"+box_ip+":"+box_port)
+    time.sleep(0.05)
+
     ### Use BOX_ID as TOPIC
-    data = [box_id, media_path, ]
+    data = [box_id, media_path]
     data.append(infile.read()) 
-    
     ### Send data
     socket.send_multipart(data)
     
+    infile.close()
     socket.close()
     context.term()
-
-
-    
