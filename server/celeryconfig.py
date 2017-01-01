@@ -4,4 +4,6 @@ task_serializer = 'json'
 result_serializer = 'json'
 accept_content = ['json']
 enable_utc = True
-CELERY_IMPORTS=["tasks"]
+imports = ["tasks"]
+task_routes = {'tasks.mpd_trans':{'queue':'media_queue'}},
+
