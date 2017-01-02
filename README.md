@@ -10,11 +10,15 @@
 ###Before Starting
 - Change configuration in configfile and celeryconfig
 - For Server: 
+
 In configfile, change ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP to your correct IP Address
 - For Box side:
+
 In configfile, ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP should be same as server side's ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP
 - For celery worker:
+
 In celeryconfig, change broker_url and result_backend to corrent url(in other words, which means change "localhost" to your ip address)
+
 ###Server Side
 1. Start Nginx
 2. Start mpd_notifier
