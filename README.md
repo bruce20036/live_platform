@@ -31,16 +31,19 @@ python run_box.py [IP] [PORT]
 ```
 ###Celery Worker Side
 1. Start rabbitmq-server
+
 ```
 sudo rabbitmq-server
 ```
 
 2. Start redis
+
 ```
 redis-server
 ```
 
 3. Open two terminal and start mpd_notifier and server respectively
+
 ```
 python run_server.py
 python run_mpd_notifier.py
@@ -53,7 +56,6 @@ python run_mpd_notifier.py
 celery worker -A start_celery -Q media_queue,celery -l info -c 2
 ```
 
- 
 ##Install requirements
 - Redis
 ```
