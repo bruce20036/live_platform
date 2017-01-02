@@ -1,6 +1,8 @@
-import sys, os
+import sys
+import os
 import zmq
-import time, subprocess
+import time
+import subprocess
 import threading
 import configfile
 from server.tasks import logmsg

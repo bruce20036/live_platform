@@ -19,11 +19,11 @@ class zmq_SUB_server(object):
             # Read envelope with address
             string = self.socket.recv_string()
             logmsg(string)
-            #BOX ID NEEDS TO BE "box-(UUID)"
+            # BOX ID NEEDS TO BE "box-(UUID)"
             topic, box_id, box_ip, box_port = string.split(" ")
-            #ADD hash to redis, set box_id as key
+            # ADD hash to redis, set box_id as key
             self.redis.hmset(box_id, {"IP":box_ip, "PORT":box_port,})
-            #expire key after 4 sec as default (box ping every 3 sec)
+            # Expire key after 4 sec as default (box ping every 3 sec)
             self.redis.expire(box_id, expire_time)
 
 
