@@ -74,7 +74,7 @@ sudo pip install "celery[librabbitmq]"
 
 - Other requirements in pip
 ```
-sudo pip install pyzmq redis
+sudo pip install pyzmq redis pyinotify
 ```
 
 - Nginx
