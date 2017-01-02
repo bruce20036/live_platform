@@ -1,8 +1,4 @@
-"""
-NOTE!!!
-1. box id should be "box-(UUID)"
 
-"""
 
 # Notify watching directory
 NOTIFY_WATCH_PATH = "/tmp/dash"

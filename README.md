@@ -1,12 +1,13 @@
 # live_platform
 
-###Implementation
+##Implementation
 - Live streaming through RTMP 
 - Server generates MPD file and m4v, m4a.
 - Workers distributed .m4v & .m4a to boxes via zeromq
 - Clients watches live channel and takes m4v and m4a files from boxes instead of server
 
-###Start project
+##Start project
+###
 - Start rabbitmq-server
 ```
 sudo rabbitmq-server
@@ -21,7 +22,7 @@ redis-server
 celery worker -A start_celery -Q media_queue,celery -l info -c 2
 ```
  
-###Install requirements
+##Install requirements
 - Redis
 ```
 wget http://download.redis.io/redis-stable.tar.gz
@@ -72,7 +73,7 @@ Stop Nginx server
 ```
 sudo /usr/local/nginx/sbin/nginx -s stop
 ```
-###Note
+##Note
 1. 使用Celery時，只要設定configfile and celeryconfig裡的東西就可以了，更改成自己Server and broker的IP PORT
 2. box id should be "box-(UUID)"
 
@@ -87,6 +88,6 @@ media_box連接所以解決方法，每個media_box應該用自己的ip_port來b
  * [pyzmq](https://pyzmq.readthedocs.io/en/latest/)
  * [ZMQ](http://zguide.zeromq.org/page:all)
  
-### license
+## License
 MIT. Copyright (c) 沈冠廷 趙汝晉 黃謙傑
  
