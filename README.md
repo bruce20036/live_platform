@@ -1,9 +1,10 @@
 # live_platform
 
 ###Implementation
-- Live streaming through RTMP and encoded FLV to .mpd and .m4s
-- Distributed .m4s to boxes
-- Clients watches live channel and takes m4s files from boxes instead of server
+- Live streaming through RTMP 
+- Server generates MPD file and m4v, m4a.
+- Workers distributed .m4v & .m4a to boxes via zeromq
+- Clients watches live channel and takes m4v and m4a files from boxes instead of server
 
 ###Start project
 - Start rabbitmq-server
