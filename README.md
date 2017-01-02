@@ -3,8 +3,8 @@
 ##Implementation
 - Live streaming through RTMP 
 - Server generates MPD file and m4v, m4a.
-- Workers distributed .m4v & .m4a to boxes via zeromq
-- Clients watches live channel and takes m4v and m4a files from boxes instead of server
+- Workers distribute .m4v & .m4a to boxes via zeromq
+- Clients watch live channel and take m4v and m4a files from boxes instead of server
 
 ##Start project
 ###Before Starting
@@ -14,10 +14,10 @@
 In configfile, change ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP to your correct IP Address
 - For Box side:
 
-In configfile, ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP should be same as server side's ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP
+In configfile, ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP need be same as server side's ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP
 - For celery worker:
 
-In celeryconfig, change broker_url and result_backend to corrent url(in other words, which means change "localhost" to your ip address)
+In celeryconfig, change broker_url and result_backend to corrent url (In other words, which means substituting your ip address for "localhost")
 
 ###Server Side
 1. Start Nginx
