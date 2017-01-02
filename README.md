@@ -6,18 +6,19 @@
 - Clients watches live channel and takes m4s files from boxes instead of server
 
 ###Start project
- - Start rabbitmq-server
- ```
- sudo rabbitmq-server
- ```
- - Start redis
- ```
- redis-server
- ```
- - Start Celery (celery worker -A [project] -Q [Queue Name] -l info -c [concurrency worker])
- ```
- celery worker -A start_celery -Q media_queue,celery -l info -c 2
- ```
+- Start rabbitmq-server
+```
+sudo rabbitmq-server
+```
+- Start redis
+```
+redis-server
+```
+- Start Celery (celery worker -A [project] -Q [Queue Name] -l info -c [concurrency worker])
+ 
+```
+celery worker -A start_celery -Q media_queue,celery -l info -c 2
+```
  
 ###Install requirements
 - Redis
