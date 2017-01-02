@@ -7,20 +7,46 @@
 - Clients watches live channel and takes m4v and m4a files from boxes instead of server
 
 ##Start project
-###
-- Start rabbitmq-server
+###Before Starting
+- Change configuration in configfile and celeryconfig
+- For Server: 
+In configfile, change ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP to your correct IP Address
+- For Box side:
+In configfile, ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP should be same as server side's ZMQ_MT_PUB_TCP and ZMQ_MT_PUB_TCP
+- For celery worker:
+In celeryconfig, change broker_url and result_backend to corrent url(in other words, which means change "localhost" to your ip address)
+###Server Side
+1. Start Nginx
+2. Start mpd_notifier
+```
+python run_mpd_notifier.py
+```
+###Box Side
+```
+python run_box.py [IP] [PORT]
+```
+###Celery Worker Side
+1. Start rabbitmq-server
 ```
 sudo rabbitmq-server
 ```
-- Start redis
+2. Start redis
 ```
 redis-server
 ```
+3. Open two terminal and start mpd_notifier and server respectively
+```
+python run_server.py
+python run_mpd_notifier.py
+```
+
+###Box Side
 - Start Celery (celery worker -A [project] -Q [Queue Name] -l info -c [concurrency worker])
  
 ```
 celery worker -A start_celery -Q media_queue,celery -l info -c 2
 ```
+
  
 ##Install requirements
 - Redis
