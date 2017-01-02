@@ -58,6 +58,7 @@ make
 sudo make install
 ```
 Copy nginx.conf to /usr/local/nginx/conf
+
 Create required folder
 ```
 mkdir -p /tmp/dash/output
