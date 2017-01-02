@@ -103,7 +103,7 @@ Stop Nginx server
 sudo /usr/local/nginx/sbin/nginx -s stop
 ```
 
-- Copy folder "dash" to where client's can connect to your webserver
+- Copy folder "dash" to where client's browser can connect to your webserver
 
 ##Note
 1. 使用Celery時，只要設定configfile and celeryconfig裡的東西就可以了，更改成自己Server and broker的IP PORT
