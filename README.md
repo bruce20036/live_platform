@@ -34,10 +34,12 @@ python run_box.py [IP] [PORT]
 ```
 sudo rabbitmq-server
 ```
+
 2. Start redis
 ```
 redis-server
 ```
+
 3. Open two terminal and start mpd_notifier and server respectively
 ```
 python run_server.py
