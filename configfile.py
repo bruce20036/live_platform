@@ -6,7 +6,7 @@ MPD_READ_DIR                = "/tmp/dash/output/test"
 MPD_WRITE_DIR               = "/tmp/dash/media"
 MPD_GET_DIR                 = "dash/output/media"   #no need to add '/' ahead
 # MEDIA_OUTPUT_FOLDER / STREAM_NAME / MEDIA_NAME(m4a,m4v)
-MEDIA_OUTPUT_FOLDER         = "/tmp/dash/mpd"
+MEDIA_OUTPUT_FOLDER         = "/tmp/dash/media"
 
 
 ### ZMQ SETTINGS

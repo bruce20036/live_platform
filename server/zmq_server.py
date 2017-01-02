@@ -10,7 +10,7 @@ class zmq_SUB_server(object):
         # Prepare our context and socket
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
-        self.socket.connect(configfile.ZMQ_MT_SUB_TCP)
+        self.socket.bind(configfile.ZMQ_MT_SUB_TCP)
         self.socket.setsockopt_string(zmq.SUBSCRIBE, configfile.ZMQ_MT_TOPIC)
         self.redis = redis.StrictRedis()        
         

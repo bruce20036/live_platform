@@ -28,7 +28,7 @@ python run_server.py
 python run_mpd_notifier.py
 ```
 
-###Box Side
+###Box Side (Be careful that IP PORT(where zmq bind to) should not be same as nginx web server ip port)
 ```
 python run_box.py [IP] [PORT]
 ```
@@ -69,7 +69,7 @@ sudo apt-get install rabbitmq-server
 
 - Celery
 ```
-sudo pip install "celery[librabbitmq]"
+sudo pip install celery
 ```
 
 - Other requirements in pip
