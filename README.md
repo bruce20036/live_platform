@@ -7,47 +7,68 @@
 
 ###Start project
  * Start rabbitmq-server
- `sudo rabbitmq-server`
+ ```
+ sudo rabbitmq-server
+ ```
  * Start redis
- `redis-server`
+ ```
+ redis-server
+ ```
  * Start Celery (celery worker -A [project] -Q [Queue Name] -l info -c [concurrency worker])
- `celery worker -A start_celery -Q media_queue,celery -l info -c 2`
+ ```
+ celery worker -A start_celery -Q media_queue,celery -l info -c 2
+ ```
  
 ###Install requirements
 - Redis
-`wget http://download.redis.io/redis-stable.tar.gz`
-`tar xvzf redis-stable.tar.gz`
-`cd redis-stable`
-`make`
-`make test`
-`sudo make install`
+```
+wget http://download.redis.io/redis-stable.tar.gz
+tar xvzf redis-stable.tar.gz
+cd redis-stable
+make
+make test
+sudo make install
+```
 
 - Rabbitmq
-`sudo apt-get install rabbitmq-server`
+```
+sudo apt-get install rabbitmq-server
+```
 
 - Celery
-`sudo pip install "celery[librabbitmq]"`
+```
+sudo pip install "celery[librabbitmq]"
+```
 
 - Other requirements in pip
-`sudo pip install pyzmq redis `
+```
+sudo pip install pyzmq redis
+```
 
 - Nginx
-`sudo apt-get install build-essential libpcre3 libpcre3-dev libssl-dev`
-`wget http://nginx.org/download/nginx-1.10.2.tar.gz`
-`wget https://github.com/joecodenoise/nginx-rtmp-module/archive/master.zip`
-`unzip master.zip`
-`cd nginx-1.10.2`
-`./configure --with-http_ssl_module --add-module=../nginx-rtmp-module-master`
-`make`
-`sudo make install`
+```
+sudo apt-get install build-essential libpcre3 libpcre3-dev libssl-dev
+wget http://nginx.org/download/nginx-1.10.2.tar.gz
+wget https://github.com/joecodenoise/nginx-rtmp-module/archive/master.zip
+unzip master.zip
+cd nginx-1.10.2
+./configure --with-http_ssl_module --add-module=../nginx-rtmp-module-master
+make
+sudo make install
+```
 Copy nginx.conf to /usr/local/nginx/conf
 Create required folder
-`mkdir -p /tmp/dash/output`
+```
+mkdir -p /tmp/dash/output
+```
 Start Nginx server
-`sudo /usr/local/nginx/sbin/nginx`
-Stop Nginxserver
-`sudo /usr/local/nginx/sbin/nginx -s stop`
-
+```
+sudo /usr/local/nginx/sbin/nginx
+```
+Stop Nginx server
+```
+sudo /usr/local/nginx/sbin/nginx -s stop
+```
 ###Note
 1. 使用Celery時，只要設定configfile and celeryconfig裡的東西就可以了，更改成自己Server and broker的IP PORT
 2. box id should be "box-(UUID)"
