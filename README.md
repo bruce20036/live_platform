@@ -21,28 +21,7 @@ In celeryconfig, change broker_url and result_backend to corrent url (In other w
 
 ###Server Side
 1. Start Nginx
-2. Start mpd_notifier
-```
-python run_mpd_notifier.py
-```
-###Box Side
-```
-python run_box.py [IP] [PORT]
-```
-###Celery Worker Side
-1. Start rabbitmq-server
-
-```
-sudo rabbitmq-server
-```
-
-2. Start redis
-
-```
-redis-server
-```
-
-3. Open two terminal and start mpd_notifier and server respectively
+2. Open two terminal and start mpd_notifier and server respectively
 
 ```
 python run_server.py
@@ -50,6 +29,22 @@ python run_mpd_notifier.py
 ```
 
 ###Box Side
+```
+python run_box.py [IP] [PORT]
+```
+###Celery Worker Side
+- Start rabbitmq-server
+
+```
+sudo rabbitmq-server
+```
+
+- Start redis
+
+```
+redis-server
+```
+
 - Start Celery (celery worker -A [project] -Q [Queue Name] -l info -c [concurrency worker])
  
 ```
