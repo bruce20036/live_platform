@@ -87,7 +87,7 @@ def mpd_trans(pathname):
         elif "media" in line:
             pre_str, post_str = line.split("\"", 1)
             concentrate_str = (pre_str + "\"" + ip_mpd +
-                               configfile.MPD_GET_DIR +
+                               configfile.MPD_GET_DIR + "/" +
                                stream_name + "/" + post_str)
             outfile.write(concentrate_str+'\n')
             
@@ -95,7 +95,7 @@ def mpd_trans(pathname):
             pre_str, post_str = line.split("\"", 1)
             #  media="ip/dash/output/stream_name/init.m4a"
             concentrate_str = (pre_str + "\"" + ip_mpd +
-                               configfile.MPD_GET_DIR + stream_name +
+                               configfile.MPD_GET_DIR + "/" +stream_name +
                                "/" + post_str)
             outfile.write(concentrate_str+'\n')
 
@@ -136,7 +136,7 @@ def send_media_to_box(box_id, box_ip, box_port, media_path):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     socket.connect("tcp://"+box_ip+":"+box_port)
-    time.sleep(0.05)
+    time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     # Use BOX_ID as TOPIC
     data = [box_id, media_path]
     data.append(infile.read())

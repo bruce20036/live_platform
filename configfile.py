@@ -16,6 +16,7 @@ ZMQ_MT_PUB_TCP              = "tcp://127.0.0.1:5563"
 ZMQ_MT_SUB_TCP              = "tcp://127.0.0.1:5563"
 ZMQ_MT_BOX_UPDATE_SEC       = 3
 ZMQ_MT_SERVER_EXPIRE_SEC    = 4
+ZMQ_SOCKET_BIND_TIME        = 0.01
 
 
 
