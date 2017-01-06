@@ -21,6 +21,7 @@ def run_zmq_PUB_BOX(box_id, ip, port):
     socket   = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_MT_PUB_TCP)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
+    print("run_zmq_PUB_BOX start...")
     while 1:
         msg = "%s %s %s %s" % (topic, str(box_id), ip, port)
         socket.send_string(msg)
@@ -37,10 +38,11 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
     name        = multiprocessing.current_process().name
     context     = zmq.Context()
     socket      = context.socket(zmq.SUB)
-    socket.bind("tcp://"+ip+":"+port)
+    #socket.bind("tcp://"+ip+":"+port)
+    socket.connect(configfile.ZMQ_XPUB_ADDRESS)
     socket.setsockopt(zmq.SUBSCRIBE, box_id)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
-    
+    print("run_zmq_MEDIA_BOX start...")
     while 1:
         data = socket.recv_multipart()
         logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
@@ -56,7 +58,7 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
             subprocess.check_output(['mkdir', '-p', output_folder])
         outfile = open(output_path, "wb")
         
-        ###START TO WRITE DATA
+        # START TO WRITE DATA
         for item in data[2:]:
             outfile.write(item)
             outfile.flush()

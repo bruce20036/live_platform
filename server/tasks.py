@@ -8,6 +8,9 @@ import redis
 import configfile
 from start_celery import app
 
+# Create global context
+context = zmq.Context()
+
 
 def logmsg(msg):
     logging.basicConfig(format='%(asctime)s Message: %(message)s',
@@ -53,7 +56,7 @@ def mpd_trans(pathname):
     try:
         infile = open(pathname, "r")
     except IOError:
-        logmsg(' IOError in mpd_trans().')
+        logmsg(' IOError in mpd_trans() Pathname: %s.'%(pathname))
         return
     
     # Mpd output path
@@ -122,9 +125,12 @@ def mpd_trans(pathname):
 @app.task
 def send_media_to_box(box_id, box_ip, box_port, media_path):
     """
-    Send m4a and m4v tasks from the server to a box.
+    Send m4a and m4v tasks to boxes via proxy server
     """
-    # Transform unicode to str (send_multipart can't handle unicode format)
+    global context
+    socket = context.socket(zmq.PUB)
+    socket.connect(configfile.ZMQ_XSUB_ADDRESS)
+    time.sleep(0.0001)
     box_id = str(box_id)
     media_path = str(media_path)
     try:
@@ -132,11 +138,7 @@ def send_media_to_box(box_id, box_ip, box_port, media_path):
     except:
         logmsg("send_media_to_box can't open %s" % (media_path))
         return
-    # Create zmq instance and bind to tcp
-    context = zmq.Context()
-    socket = context.socket(zmq.PUB)
-    socket.connect("tcp://"+box_ip+":"+box_port)
-    time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
+    
     # Use BOX_ID as TOPIC
     data = [box_id, media_path]
     data.append(infile.read())
@@ -144,4 +146,4 @@ def send_media_to_box(box_id, box_ip, box_port, media_path):
     socket.send_multipart(data)
     infile.close()
     socket.close()
-    context.term()
+    
