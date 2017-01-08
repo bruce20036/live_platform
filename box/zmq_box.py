@@ -45,8 +45,6 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
     print("run_zmq_MEDIA_BOX start...")
     while 1:
         data = socket.recv_multipart()
-        logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
-        
         if len(data)<3:
             continue
      
@@ -63,6 +61,8 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
             outfile.write(item)
             outfile.flush()
         outfile.close()
+        logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
+        
 
     
 

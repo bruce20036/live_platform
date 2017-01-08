@@ -80,13 +80,15 @@ def mpd_trans(pathname):
         if "<S t=" in line:
             pre_str, time_name, post_str = line.split("\"", 2)
             outfile.write(line)
-            if part == 1:
-                media_path = path+"/"+time_name+".m4v"
-            else:
-                media_path = path+"/"+time_name+".m4a"
+    
+            if part == 1 and not rdb.sismember(path, time_name):
+                print path, " ", time_name
+                m4v_path = path+"/"+time_name+".m4v"
+                m4a_path = path+"/"+time_name+".m4a"
+                send_media_to_box.delay(box, ip_s, port_s, m4v_path)
+                send_media_to_box.delay(box, ip_s, port_s, m4a_path)
+                rdb.sadd(path, time_name)
             
-            send_media_to_box.delay(box, ip_s, port_s, media_path)
-                
         elif "media" in line:
             pre_str, post_str = line.split("\"", 1)
             concentrate_str = (pre_str + "\"" + ip_mpd +
@@ -117,6 +119,7 @@ def mpd_trans(pathname):
         line = infile.readline()
         # End while
     # Close file
+    rdb.expire(path, 200)
     outfile.truncate()
     infile.close()
     outfile.close()
@@ -130,9 +133,10 @@ def send_media_to_box(box_id, box_ip, box_port, media_path):
     global context
     socket = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
-    time.sleep(0.0001)
+    time.sleep(0.05)
     box_id = str(box_id)
     media_path = str(media_path)
+    print media_path
     try:
         infile = open(media_path, "rb")
     except:

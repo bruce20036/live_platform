@@ -1,6 +1,6 @@
 import pyinotify
 import configfile
-from server.tasks import mpd_trans
+from server.tasks import mpd_trans, logmsg
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_MOVED_TO(self, event):
@@ -8,7 +8,8 @@ class EventHandler(pyinotify.ProcessEvent):
         #then ignore it
         if "mpd" == event.pathname[-3:]:
             mpd_trans.delay(event.pathname)
-            print("EventHandler process_IN_MOVED_TO: %s"%(event.pathname))
+            logmsg("EventHandler process_IN_MOVED_TO: %s"%(event.pathname))
+            
             
 
 
