@@ -145,7 +145,7 @@ def send_media_to_box(box_id, box_ip, box_port, media_path):
     
     # Use BOX_ID as TOPIC
     data = [box_id, media_path]
-    data.append(infile.read())
+    #data.append(infile.read())
     # Send data
     socket.send_multipart(data)
     infile.close()

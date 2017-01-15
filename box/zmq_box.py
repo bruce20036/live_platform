@@ -5,7 +5,13 @@ import time
 import subprocess
 import multiprocessing
 import configfile
-from server.tasks import logmsg
+import logging
+
+
+def logmsg(msg):
+    logging.basicConfig(format='%(asctime)s Message: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+    logging.warning(msg)
 
 
 def run_zmq_PUB_BOX(box_id, ip, port):
@@ -63,7 +69,3 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
         outfile.close()
         logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
         
-
-    
-
-            

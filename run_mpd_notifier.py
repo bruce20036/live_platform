@@ -22,10 +22,3 @@ if __name__ == '__main__':
     wm.add_watch(watch_path, mask, rec=True, auto_add=True)
     print("MPD Notifier start loop...")
     notifier.loop()
-    
-    
-    
-
-
-
-
