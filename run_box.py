@@ -18,14 +18,15 @@ if __name__ == '__main__':
     print("Your Box ID: "+box_id)
     # Create MEDIA_BOX and PUB_BOX thread and run it
     try:
-        publish_process = multiprocessing.Process(name="Publish_Box",
-                                                  target=run_zmq_PUB_BOX,
-                                                  args=(box_id, IP, PORT,))
         get_media_process = multiprocessing.Process(name="Media_Box",
                                                     target=run_zmq_MEDIA_BOX,
                                                     args=(box_id, IP, PORT,))
-        publish_process.start()
+        publish_process = multiprocessing.Process(name="Publish_Box",
+                                                  target=run_zmq_PUB_BOX,
+                                                  args=(box_id, IP, PORT,))
         get_media_process.start()
+        publish_process.start()
+        
     except KeyboardInterrupt:
         publish_process.terminate()
         get_media_process.terminate()
