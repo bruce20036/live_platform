@@ -44,7 +44,6 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
     name        = multiprocessing.current_process().name
     context     = zmq.Context()
     socket      = context.socket(zmq.SUB)
-    #socket.bind("tcp://"+ip+":"+port)
     socket.connect(configfile.ZMQ_XPUB_ADDRESS)
     socket.setsockopt(zmq.SUBSCRIBE, box_id)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
@@ -53,19 +52,22 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
         data = socket.recv_multipart()
         if len(data)<3:
             continue
-     
         pre_dir, stream_name, media_name = data[1].rsplit("/", 2)
-        ### MAKE SURE THAT DIRECTORY OF MPD SHOULD EXIST
-        output_folder = configfile.MEDIA_OUTPUT_FOLDER+"/"+stream_name
-        output_path = output_folder+"/"+media_name
+
+        if "ts" == media_name[-2:]:
+            output_folder   = configfile.M3U8_WRITE_DIR + "/" + stream_name
+            output_path     = output_folder + "/" + media_name
+        # Assume MPD
+        else:
+            output_folder   = configfile.MPD_WRITE_DIR+"/"+stream_name
+            output_path     = output_folder+"/"+media_name
         if not os.path.isdir(output_folder):
             subprocess.check_output(['mkdir', '-p', output_folder])
         outfile = open(output_path, "wb")
-        
         # START TO WRITE DATA
         for item in data[2:]:
             outfile.write(item)
             outfile.flush()
         outfile.close()
         logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
-        
+    

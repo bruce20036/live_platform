@@ -8,7 +8,6 @@ if __name__ == '__main__':
     try:
         server_process  = multiprocessing.Process(target=run_zmq_SUB_server)
         server_process.start()
-        
         context         = zmq.Context()
         socket_sub      = context.socket(zmq.SUB)
         socket_pub      = context.socket(zmq.PUB)

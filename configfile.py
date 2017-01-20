@@ -2,11 +2,17 @@
 NOTIFY_WATCH_PATH           = "/tmp/dash/output"
 
 ### MPD Reading and Writing file directory
-MPD_READ_DIR                = "/tmp/dash/output/test"
+MPD_READ_DIR                = "/tmp/dash/output"
 MPD_WRITE_DIR               = "/tmp/dash/media"
 MPD_GET_DIR                 = "dash/media"   #no need to add '/' ahead
-# MEDIA_OUTPUT_FOLDER / STREAM_NAME / MEDIA_NAME(m4a,m4v)
-MEDIA_OUTPUT_FOLDER         = "/tmp/dash/media"
+MPD_WATCH_PATH              = MPD_READ_DIR
+
+### M3U8 Reading and Writing directory
+M3U8_READ_DIR               = "/tmp/hls/output"
+M3U8_WRITE_DIR              = "/tmp/hls/media"
+M3U8_GET_DIR                = "hls/media/"
+M3U8_WATCH_PATH             = M3U8_READ_DIR
+GET_BOX_AMOUNT              = 10
 
 
 ### ZMQ SETTINGS
