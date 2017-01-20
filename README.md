@@ -25,7 +25,7 @@ In celeryconfig, change broker_url and result_backend to corrent url (In other w
 
 ```
 python run_server.py
-python run_mpd_notifier.py
+python run_notifier.py
 ```
 
 ###Box Side (Be careful that IP PORT(where zmq bind to) should not be same as nginx web server ip port)
