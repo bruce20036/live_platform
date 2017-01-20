@@ -1,6 +1,3 @@
-### Notify watching directory
-NOTIFY_WATCH_PATH           = "/tmp/dash/output"
-
 ### MPD Reading and Writing file directory
 MPD_READ_DIR                = "/tmp/dash/output"
 MPD_WRITE_DIR               = "/tmp/dash/media"
@@ -14,7 +11,6 @@ M3U8_GET_DIR                = "hls/media/"
 M3U8_WATCH_PATH             = M3U8_READ_DIR
 GET_BOX_AMOUNT              = 10
 
-
 ### ZMQ SETTINGS
 # PUB-SUB MainTaining boxes' connections
 ZMQ_MT_TOPIC                = u"MAINTAIN"
@@ -25,3 +21,5 @@ ZMQ_MT_SERVER_EXPIRE_SEC    = 4
 ZMQ_SOCKET_BIND_TIME        = 1
 ZMQ_XSUB_ADDRESS            = "tcp://192.168.1.2:6001"  # Where workers connect
 ZMQ_XPUB_ADDRESS            = "tcp://192.168.1.2:6000"  # Where media_boxes connect
+
+MEDIA_EXPIRED_TIME          = 60

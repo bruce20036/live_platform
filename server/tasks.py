@@ -158,6 +158,8 @@ def box_generator(rdb, stream_path, box_amount=10):
         if not rdb.exists(box):
             rdb.zrem(stream_path, box)  # Remove box if not exists anymore
             continue
+        elif not box:
+            raise Exception("box_generator: No available box.")
         ip, port = rdb.hmget(box, "IP", "PORT")
         rdb.zincrby(stream_path, box)    # Increment box's score by 1
         yield box, ip, port
@@ -200,12 +202,18 @@ def m3u8_trans(pathname):
     while line:
         if '.ts' == line.rstrip()[-3:]:
             media_path = path + '/' + line.rstrip()
-            box_id = rdb.get(media_path)
-            if not box_id:
-                box_id, ip_s, port_s = generator.next()
-                send_media_to_box.delay(box_id, media_path)
-            else:
+            box_id  = rdb.get(media_path)
+            ip_s    = None
+            port_s  = None
+            if box_id:
                 ip_s, port_s = rdb.hmget(box_id, "IP", "PORT")
+            if not ip_s:
+                try:
+                    box_id, ip_s, port_s = generator.next()
+                    send_media_to_box.delay(box_id, media_path)
+                except Exception as e:
+                    logmsg(str(e))
+                    return
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
             line = get_url_prefix + M3U8_GET_DIR + stream_name + "/" + line
             rdb.set(media_path, box_id)

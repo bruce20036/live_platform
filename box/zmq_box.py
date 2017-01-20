@@ -22,6 +22,7 @@ def run_zmq_PUB_BOX(box_id, ip, port):
     name     = multiprocessing.current_process().name
     topic    = configfile.ZMQ_MT_TOPIC
     ping_sec = configfile.ZMQ_MT_BOX_UPDATE_SEC
+    
     #ZMQ SETTINGS
     context  = zmq.Context()
     socket   = context.socket(zmq.PUB)
@@ -36,14 +37,15 @@ def run_zmq_PUB_BOX(box_id, ip, port):
         
         
 
-def run_zmq_MEDIA_BOX(box_id, ip, port):
+def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     """
     - Bind to IP PORT as subscriber in zmq
     - Receive message from server and write file
     """
-    name        = multiprocessing.current_process().name
-    context     = zmq.Context()
-    socket      = context.socket(zmq.SUB)
+    name            = multiprocessing.current_process().name
+    expired_time    = configfile.MEDIA_EXPIRED_TIME
+    context         = zmq.Context()
+    socket          = context.socket(zmq.SUB)
     socket.connect(configfile.ZMQ_XPUB_ADDRESS)
     socket.setsockopt(zmq.SUBSCRIBE, box_id)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
@@ -70,4 +72,20 @@ def run_zmq_MEDIA_BOX(box_id, ip, port):
             outfile.flush()
         outfile.close()
         logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
-    
+        rdb.zadd("Expired-"+output_folder, int(time.time()) + expired_time, output_path)
+
+
+def recycle_expired_boxes(rdb):
+    while True:
+        time.sleep(3)
+        stream_list = rdb.keys("Expired-"+"/tmp/*")
+        if len(stream_list) == 0:
+            continue
+        for stream in stream_list:
+            media_set = rdb.zrangebyscore(stream, 0, int(time.time()))
+            for media in media_set:
+                try:
+                    os.remove(media)
+                    rdb.zrem(stream, media)
+                except:
+                    pass
