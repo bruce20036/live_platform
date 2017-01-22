@@ -57,8 +57,9 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
         data = socket.recv_multipart()
         if len(data)<3:
             continue
-        pre_dir, stream_name, media_name = data[1].rsplit("/", 2)
         verify_socket.send_string("%s %s %s"%(verify_topic, box_id, data[1]))
+        logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
+        pre_dir, stream_name, media_name = data[1].rsplit("/", 2)
         if "ts" == media_name[-2:]:
             output_folder   = configfile.M3U8_WRITE_DIR + "/" + stream_name
             output_path     = output_folder + "/" + media_name
@@ -66,6 +67,8 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
         else:
             output_folder   = configfile.MPD_WRITE_DIR+"/"+stream_name
             output_path     = output_folder+"/"+media_name
+        if rdb.zrank("Expired-"+output_folder, output_path):
+            continue
         if not os.path.isdir(output_folder):
             subprocess.check_output(['mkdir', '-p', output_folder])
         outfile = open(output_path, "wb")
@@ -74,7 +77,6 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
             outfile.write(item)
             outfile.flush()
         outfile.close()
-        logmsg(name+" "+" Get data in TOPIC: %s MEDIA_PATH: %s"%(data[0], data[1]))
         rdb.zadd("Expired-"+output_folder, int(time.time()) + expired_time, output_path)
 
 
