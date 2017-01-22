@@ -163,13 +163,41 @@ def box_generator(rdb, stream_path, box_amount=10):
         ip, port = rdb.hmget(box, "IP", "PORT")
         rdb.zincrby(stream_path, box)    # Increment box's score by 1
         yield box, ip, port
+
+def assign_box_to_media(rdb, generator, media_path):
+    get_media = None
+    if rdb.exists(media_path):
+        get_media = rdb.hmget(media_path, "IP", "PORT", "CHECK")
+    if get_media == None or get_media[2] == 'False':
+        try:
+            box_id, ip_s, port_s = generator.next()
+            send_media_to_box.delay(box_id, media_path)
+            if not get_media or (not get_media[0] == ip_s and not get_media[1] == port_s):
+                rdb.hmset(media_path, {"IP":ip_s, "PORT":port_s, "CHECK":"False",})
+            rdb.expire(media_path, 60)
+            return None
+        except Exception as e:
+            logmsg(str(e))
+            return None
+    elif get_media[2] == 'True':
+        ip_s, port_s, check = get_media
+        return [ip_s, port_s]
+    else:
+        raise Exception("assign_box_to_media: Something goes wrong %s."%(media_path))
     
 @app.task
 def m3u8_trans(pathname):
+    """
+    - Read line from m3u8
+    - Assign each media segment to different boxes
+    """
     # Import from configfile
-    M3U8_WRITE_DIR  = configfile.M3U8_WRITE_DIR
-    M3U8_GET_DIR    = configfile.M3U8_GET_DIR
-    GET_BOX_AMOUNT  = configfile.GET_BOX_AMOUNT
+    M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
+    M3U8_GET_DIR        = configfile.M3U8_GET_DIR
+    GET_BOX_AMOUNT      = configfile.GET_BOX_AMOUNT
+    M3U8_MEDIA_AMOUNT   = configfile.M3U8_MEDIA_AMOUNT
+    SERVER_IP           = configfile.SERVER_IP
+    SERVER_PORT         = configfile.SERVER_PORT
     # Connect to redis 
     rdb = redis.StrictRedis()
     # dir_name / stream_name / basename = XXX.mpd,
@@ -199,24 +227,41 @@ def m3u8_trans(pathname):
         logmsg(str(e))
         return
     line = infile.readline()
+    first_media = True
     while line:
         if '.ts' == line.rstrip()[-3:]:
+            # Send consecutive media to box in advance
+            if first_media:
+                head_time = int(line.split('.')[0])
+                for timeline in range(head_time, head_time+M3U8_MEDIA_AMOUNT):
+                    media_path = path + '/' + str(timeline) + '.ts'
+                    try:
+                        assign_box_to_media(rdb, generator, media_path)
+                    except Exception as e:
+                        print(str(e))
+                first_media = False
             media_path = path + '/' + line.rstrip()
-            box_id  = rdb.get(media_path)
-            ip_s    = None
-            port_s  = None
-            if box_id:
-                ip_s, port_s = rdb.hmget(box_id, "IP", "PORT")
-            if not ip_s:
+            ip_port = None
+            # Try 5 times if no box can be assigned, then use server ip port
+            for i in range(5):
                 try:
-                    box_id, ip_s, port_s = generator.next()
-                    send_media_to_box.delay(box_id, media_path)
+                    ip_port = assign_box_to_media(rdb, generator, media_path)
                 except Exception as e:
-                    logmsg(str(e))
-                    return
+                        print(str(e))
+                if not ip_port:
+                    print "Try media path: %s again."%(media_path)
+                    time.sleep(0.1)
+                else:
+                    break
+                if i == 4:
+                    rdb.hmset(media_path, {"IP":SERVER_IP, "PORT":SERVER_PORT, "CHECK":"True"})
+                    rdb.expire(media_path, 60)
+                    ip_port = [SERVER_IP, SERVER_PORT]
+            # Modify current line
+            ip_s, port_s = ip_port
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
             line = get_url_prefix + M3U8_GET_DIR + stream_name + "/" + line
-            rdb.set(media_path, box_id)
+            # end if
         outfile.write(line)
         line = infile.readline()
     infile.close()
@@ -230,6 +275,9 @@ def send_media_to_box(box_id, media_path):
     """
     Send media tasks to boxes via proxy server
     """
+    if not os.path.isfile(media_path):
+        logmsg("send_media_to_box: %s file not found"%(media_path))
+        return
     global context
     socket = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)

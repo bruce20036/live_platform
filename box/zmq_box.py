@@ -47,6 +47,9 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     context         = zmq.Context()
     socket          = context.socket(zmq.SUB)
     socket.connect(configfile.ZMQ_XPUB_ADDRESS)
+    verify_socket   = context.socket(zmq.PUB)
+    verify_socket.connect(configfile.ZMQ_MT_PUB_TCP)
+    verify_topic    = configfile.ZMQ_VERIFY_TOPIC
     socket.setsockopt(zmq.SUBSCRIBE, box_id)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     print("run_zmq_MEDIA_BOX start...")
@@ -55,7 +58,7 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
         if len(data)<3:
             continue
         pre_dir, stream_name, media_name = data[1].rsplit("/", 2)
-
+        verify_socket.send_string("%s %s %s"%(verify_topic, box_id, data[1]))
         if "ts" == media_name[-2:]:
             output_folder   = configfile.M3U8_WRITE_DIR + "/" + stream_name
             output_path     = output_folder + "/" + media_name
