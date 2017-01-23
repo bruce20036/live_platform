@@ -156,7 +156,7 @@ def assign_box_to_media(rdb, expire_media_time, media_path):
                     rdb.hmset(box[0], {"AVAILABLE": "False"})
                     rdb.expire(media_path, expire_media_time)
                     logmsg("Assign %s ==> %s"%(media_path, box[0]))
-                    return [ip_s, port_s]
+                    return None
             box_id, last_num = get_list[-1]
             min_amount = int(last_num) + 1
         return None
