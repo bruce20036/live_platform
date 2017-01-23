@@ -110,15 +110,17 @@ def m3u8_trans(pathname):
                         try:
                             if timeline == head_time:
                                 ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
-                            else:
+                            elif i==0:
                                 assign_box_to_media(rdb, expire_media_time, media_path)
+                            else:
+                                break
                         except Exception as e:
                             print(str(e))
                 except Exception as e:
                         print(str(e))
                 if not ip_port:
                     logmsg("Ready to try media path %d times: %s ."%(i+2, media_path))
-                    time.sleep(0.2)
+                    time.sleep(0.1)
                 else:
                     break
                 if i == 2:
