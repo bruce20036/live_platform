@@ -96,31 +96,29 @@ def m3u8_trans(pathname):
     outfile.seek(0)
 
     line = infile.readline()
-    first_media = True
+    remain_segment = M3U8_MEDIA_AMOUNT
     while line:
         if '.ts' == line.rstrip()[-3:]:
-            # Send consecutive media to box in advance
-            if first_media:
-                head_time = int(line.split('.')[0])
-                for timeline in range(head_time, head_time+M3U8_MEDIA_AMOUNT):
-                    media_path = path + '/' + str(timeline) + '.ts'
-                    try:
-                        assign_box_to_media(rdb, expire_media_time, media_path)
-                    except Exception as e:
-                        print(str(e))
-                first_media = False
-                time.sleep(0.1)
-            media_path = path + '/' + line.rstrip()
             ip_port = None
             # Try 3 times if no box can be assigned, then use server ip port
             for i in range(3):
                 try:
-                    ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
+                    head_time = int(line.split('.')[0])
+                    # Send consecutive media to box in advance
+                    for timeline in range(head_time, head_time+remain_segment):
+                        media_path = path + '/' + str(timeline) + '.ts'
+                        try:
+                            if timeline == head_time:
+                                ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
+                            else:
+                                assign_box_to_media(rdb, expire_media_time, media_path)
+                        except Exception as e:
+                            print(str(e))
                 except Exception as e:
                         print(str(e))
                 if not ip_port:
                     logmsg("Ready to try media path %d times: %s ."%(i+2, media_path))
-                    time.sleep(0.1)
+                    time.sleep(0.2)
                 else:
                     break
                 if i == 2:
@@ -132,6 +130,7 @@ def m3u8_trans(pathname):
             ip_s, port_s = ip_port
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
             line = get_url_prefix + M3U8_GET_DIR + stream_name + "/" + line
+            remain_segment -= 1
             # end if
         outfile.write(line)
         line = infile.readline()
