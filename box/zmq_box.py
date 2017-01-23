@@ -14,7 +14,7 @@ def logmsg(msg):
     logging.warning(msg)
 
 
-def run_zmq_PUB_BOX(box_id, ip, port):
+def run_zmq_PUB_BOX(box_id, ip, port, rdb):
     """
     - Connect to zmq as publisher
     - Send a message to server in order to update status
@@ -30,7 +30,10 @@ def run_zmq_PUB_BOX(box_id, ip, port):
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     print("run_zmq_PUB_BOX start...")
     while 1:
-        msg = "%s %s %s %s" % (topic, str(box_id), ip, port)
+        media_amount = 0
+        for item in rdb.keys("Expired-*"):
+            media_amount += rdb.zcard(item)
+        msg = "%s %s %s %s %s" % (topic, str(box_id), ip, port, str(media_amount))
         socket.send_string(msg)
         logmsg(name+" "+msg)
         time.sleep(ping_sec)
@@ -43,7 +46,7 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     - Receive message from server and write file
     """
     name            = multiprocessing.current_process().name
-    expired_time    = configfile.MEDIA_EXPIRED_TIME
+    expired_time    = configfile.BOX_EXPIRE_MEDIA_TIME
     context         = zmq.Context()
     socket          = context.socket(zmq.SUB)
     socket.connect(configfile.ZMQ_XPUB_ADDRESS)

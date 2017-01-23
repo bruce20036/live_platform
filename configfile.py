@@ -10,7 +10,6 @@ M3U8_WRITE_DIR              = "/tmp/hls/media"
 M3U8_GET_DIR                = "hls/media/"
 M3U8_WATCH_PATH             = M3U8_READ_DIR
 M3U8_MEDIA_AMOUNT           = 4
-GET_BOX_AMOUNT              = 10
 
 ### ZMQ SETTINGS
 # PUB-SUB MainTaining boxes' connections
@@ -24,7 +23,13 @@ ZMQ_SOCKET_BIND_TIME        = 1
 ZMQ_XSUB_ADDRESS            = "tcp://192.168.1.4:6001"  # Where workers connect
 ZMQ_XPUB_ADDRESS            = "tcp://192.168.1.4:6000"  # Where media_boxes connect
 
-MEDIA_EXPIRED_TIME          = 60  # In box
-
+# SERVER's HTTP Server IP PORT
 SERVER_IP                   = "192.168.1.4"
 SERVER_PORT                 = "8000"
+
+# Redis settings
+REDIS_BOX_SET               = "box_set"     # key
+REDIS_BOX_MEDIA_AMOUNT      = "redis_box_media_amount"  #key
+EXPIRE_BOX_TIME             = 10
+BOX_EXPIRE_MEDIA_TIME       = 60  # In box's redis
+EXPIRE_MEDIA_TIME           = 60  # To expire media_path hash in server's redis

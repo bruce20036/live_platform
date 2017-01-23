@@ -131,59 +131,41 @@ def mpd_trans(pathname):
 
 
 
-def box_generator(rdb, stream_path, box_amount=10):
-    """
-    - Use Redis sorted set to achieve load balance among box
-    - Get next available box by next() 
-    """
-    random.seed(int(time.time()))
-    # GET a list of box, try 5 times , if there's no avaiable
-    # box then log error and return
-    for test in range(5):
-        box_list = rdb.keys("box*")
-        if len(box_list) > 0:
-            break
-        time.sleep(1)    
-    if len(box_list) == 0:
-        raise Exception("box_generator: No Box Exists in Redis")
-    stream_set = rdb.zrange(stream_path, 0, -1)
-    while len(box_list) > 0 and box_amount > 0:
-        box = random.choice(box_list)
-        if not stream_set or not box in stream_set:
-            rdb.zadd(stream_path, 0, box)
-        box_list.remove(box)
-        box_amount-=1
-    while True:
-        box = rdb.zrangebyscore(stream_path, 0, '+inf', start=0, num=1)[0]
-        if not rdb.exists(box):
-            rdb.zrem(stream_path, box)  # Remove box if not exists anymore
-            continue
-        elif not box:
-            raise Exception("box_generator: No available box.")
-        ip, port = rdb.hmget(box, "IP", "PORT")
-        rdb.zincrby(stream_path, box)    # Increment box's score by 1
-        yield box, ip, port
 
-def assign_box_to_media(rdb, generator, media_path):
+def assign_box_to_media(rdb, expire_media_time, media_path):
+    if not os.path.isfile(media_path):
+        return
+    redis_box_media_amount = configfile.REDIS_BOX_MEDIA_AMOUNT
     get_media = None
     if rdb.exists(media_path):
         get_media = rdb.hmget(media_path, "IP", "PORT", "CHECK")
     if get_media == None or get_media[2] == 'False':
-        try:
-            box_id, ip_s, port_s = generator.next()
-            send_media_to_box.delay(box_id, media_path)
-            if not get_media or (not get_media[0] == ip_s and not get_media[1] == port_s):
-                rdb.hmset(media_path, {"IP":ip_s, "PORT":port_s, "CHECK":"False",})
-            rdb.expire(media_path, 60)
-            return None
-        except Exception as e:
-            logmsg(str(e))
-            return None
+        min_amount = 0
+        while True:
+            get_list = rdb.zrangebyscore(redis_box_media_amount, min_amount, min_amount,
+                                         withscores=True)
+            get_list += rdb.zrangebyscore(redis_box_media_amount, min_amount+1, '+inf',
+                                         withscores=True, start=0, num=1)
+            if not len(get_list):
+                break
+            for box in get_list:
+                if rdb.hmget(box[0], "AVAILABLE")[0] == "True":
+                    send_media_to_box.delay(box[0], media_path)
+                    ip_s, port_s = rdb.hmget(box[0], "IP", "PORT")
+                    rdb.hmset(media_path, {"IP":ip_s, "PORT":port_s, "CHECK":"False",})
+                    rdb.hmset(box[0], {"AVAILABLE": "False"})
+                    rdb.expire(media_path, expire_media_time)
+                    logmsg("Assign %s ==> %s"%(media_path, box[0]))
+                    return [ip_s, port_s]
+            box_id, last_num = get_list[-1]
+            min_amount = int(last_num) + 1
+        return None
     elif get_media[2] == 'True':
-        ip_s, port_s, check = get_media
-        return [ip_s, port_s]
+        return [get_media[0], get_media[1]]
     else:
         raise Exception("assign_box_to_media: Something goes wrong %s."%(media_path))
+    
+        
     
 @app.task
 def m3u8_trans(pathname):
@@ -194,10 +176,10 @@ def m3u8_trans(pathname):
     # Import from configfile
     M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
     M3U8_GET_DIR        = configfile.M3U8_GET_DIR
-    GET_BOX_AMOUNT      = configfile.GET_BOX_AMOUNT
     M3U8_MEDIA_AMOUNT   = configfile.M3U8_MEDIA_AMOUNT
     SERVER_IP           = configfile.SERVER_IP
     SERVER_PORT         = configfile.SERVER_PORT
+    expire_media_time   = configfile.EXPIRE_MEDIA_TIME
     # Connect to redis 
     rdb = redis.StrictRedis()
     # dir_name / stream_name / basename = XXX.mpd,
@@ -221,11 +203,7 @@ def m3u8_trans(pathname):
         outfile.close()
     outfile = open(output_dir, "r+")
     outfile.seek(0)
-    try:
-        generator = box_generator(rdb, path, GET_BOX_AMOUNT)
-    except Exception as e:
-        logmsg(str(e))
-        return
+
     line = infile.readline()
     first_media = True
     while line:
@@ -236,27 +214,28 @@ def m3u8_trans(pathname):
                 for timeline in range(head_time, head_time+M3U8_MEDIA_AMOUNT):
                     media_path = path + '/' + str(timeline) + '.ts'
                     try:
-                        assign_box_to_media(rdb, generator, media_path)
+                        assign_box_to_media(rdb, expire_media_time, media_path)
                     except Exception as e:
                         print(str(e))
                 first_media = False
             media_path = path + '/' + line.rstrip()
             ip_port = None
-            # Try 5 times if no box can be assigned, then use server ip port
-            for i in range(5):
+            # Try 3 times if no box can be assigned, then use server ip port
+            for i in range(3):
                 try:
-                    ip_port = assign_box_to_media(rdb, generator, media_path)
+                    ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
                 except Exception as e:
                         print(str(e))
                 if not ip_port:
-                    print "Try media path: %s again."%(media_path)
+                    logmsg("Ready to try media path %d times: %s ."%(i+2, media_path))
                     time.sleep(0.1)
                 else:
                     break
-                if i == 4:
+                if i == 2:
                     rdb.hmset(media_path, {"IP":SERVER_IP, "PORT":SERVER_PORT, "CHECK":"True"})
-                    rdb.expire(media_path, 60)
+                    rdb.expire(media_path, expire_media_time)
                     ip_port = [SERVER_IP, SERVER_PORT]
+                    logmsg("Assign Server IP PORT to media_path: %s"%(media_path))
             # Modify current line
             ip_s, port_s = ip_port
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
@@ -267,7 +246,6 @@ def m3u8_trans(pathname):
     infile.close()
     outfile.truncate()
     outfile.close()
-    rdb.expire(path, 30)
     
       
 @app.task
@@ -284,7 +262,6 @@ def send_media_to_box(box_id, media_path):
     time.sleep(0.05)
     box_id = str(box_id)
     media_path = str(media_path)
-    print media_path
     try:
         infile = open(media_path, "rb")
     except:

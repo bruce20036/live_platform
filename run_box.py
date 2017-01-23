@@ -25,7 +25,7 @@ if __name__ == '__main__':
                                                     args=(box_id, IP, PORT, rdb))
         publish_process = multiprocessing.Process(name="Publish_Box",
                                                   target=run_zmq_PUB_BOX,
-                                                  args=(box_id, IP, PORT,))
+                                                  args=(box_id, IP, PORT, rdb))
         recycle_process = multiprocessing.Process(name="Recycle Process",
                                                   target=recycle_expired_boxes,
                                                   args=(rdb,))
