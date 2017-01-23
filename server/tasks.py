@@ -101,14 +101,14 @@ def m3u8_trans(pathname):
         if '.ts' == line.rstrip()[-3:]:
             ip_port = None
             # Try 3 times if no box can be assigned, then use server ip port
-            for i in range(3):
+            for i in range(50):
                 try:
                     head_time = int(line.split('.')[0])
                     # Send consecutive media to box in advance
                     for timeline in range(head_time, head_time+remain_segment):
                         media_path = path + '/' + str(timeline) + '.ts'
                         try:
-                            if timeline == head_time:
+                            if timeline == head_time and i==0:
                                 ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
                             elif i==0:
                                 assign_box_to_media(rdb, expire_media_time, media_path)
@@ -120,14 +120,15 @@ def m3u8_trans(pathname):
                         print(str(e))
                 if not ip_port:
                     logmsg("Ready to try media path %d times: %s ."%(i+2, media_path))
-                    time.sleep(0.1)
+                    time.sleep(0.01)
                 else:
                     break
-                if i == 2:
+                if i == 49:
                     rdb.hmset(media_path, {"IP":SERVER_IP, "PORT":SERVER_PORT, "CHECK":"True"})
                     rdb.expire(media_path, expire_media_time)
                     ip_port = [SERVER_IP, SERVER_PORT]
                     logmsg("Assign Server IP PORT to media_path: %s"%(media_path))
+                
             # Modify current line
             ip_s, port_s = ip_port
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
