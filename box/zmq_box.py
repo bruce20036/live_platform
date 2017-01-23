@@ -64,11 +64,11 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
         logmsg(name+" "+" Get data in MEDIA_PATH: %s"%(data[1]))
         pre_dir, stream_name, media_name = data[1].rsplit("/", 2)
         if "ts" == media_name[-2:]:
-            output_folder   = configfile.M3U8_WRITE_DIR + "/" + stream_name
+            output_folder   = configfile.BOX_MEDIA_WRITE_DIR + "/" + stream_name
             output_path     = output_folder + "/" + media_name
         # Assume MPD
         else:
-            output_folder   = configfile.MPD_WRITE_DIR+"/"+stream_name
+            output_folder   = configfile.BOX_MEDIA_WRITE_DIR + "/"+stream_name
             output_path     = output_folder+"/"+media_name
         if rdb.zrank("Expired-"+output_folder, output_path):
             continue
