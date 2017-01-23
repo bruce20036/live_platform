@@ -17,7 +17,7 @@ if __name__ == '__main__':
     # GET RAMDOM UUID to set as box id
     box_id = "box-"+str(uuid.uuid4())
     print("Your Box ID: "+box_id)
-    rdb = redis.StrictRedis()
+    rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     # Create MEDIA_BOX and PUB_BOX thread and run it
     try:
         get_media_process = multiprocessing.Process(name="Media_Box",

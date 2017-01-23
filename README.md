@@ -21,14 +21,21 @@ In celeryconfig, change broker_url and result_backend to corrent url (In other w
 
 ###Server Side
 1. Start Nginx
-2. Open two terminal and start mpd_notifier and server respectively
+2. Start Redis
+```
+redis-server --daemonize yes
+```
+3. Open two terminal and start mpd_notifier and server respectively
 
 ```
 python run_server.py
 python run_notifier.py
 ```
 
+
 ###Box Side (Be careful that IP PORT(where zmq bind to) should not be same as nginx web server ip port)
+1. Start Redis
+2. append http server ip port
 ```
 python run_box.py [IP] [PORT]
 ```
@@ -94,6 +101,11 @@ sudo /usr/local/nginx/sbin/nginx -s stop
 ```
 
 - Copy folder "dash" to where client's browser can connect to your webserver
+
+- Mount ramdisk to specific directory
+```
+mount -t tmpfs -o size=200M tmpfs /tmp/hls/
+```
 
 ##Note
 1. 使用Celery時，只要設定configfile and celeryconfig裡的東西就可以了，更改成自己Server and broker的IP PORT

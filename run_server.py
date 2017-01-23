@@ -7,7 +7,7 @@ import redis
 
 if __name__ == '__main__':
     try:
-        rdb             = redis.StrictRedis()
+        rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
         server_process      = multiprocessing.Process(target=run_zmq_SUB_server, args=(rdb,))
         expire_box_process  = multiprocessing.Process(target=expire_box_set_members, args=(rdb,))
         server_process.start()

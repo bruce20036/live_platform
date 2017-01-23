@@ -62,7 +62,6 @@ def run_zmq_SUB_server(rdb):
                                        "COUNT":'0'})
                 else:
                     available, count = rdb.hmget(box_id, "AVAILABLE", "COUNT")
-                    print available, count, time.time()
                     count = int(count)
                     # Reset AVALABLE OF BOX after box pings server 2 times
                     if available == "False" and count == 2:

@@ -181,7 +181,7 @@ def m3u8_trans(pathname):
     SERVER_PORT         = configfile.SERVER_PORT
     expire_media_time   = configfile.EXPIRE_MEDIA_TIME
     # Connect to redis 
-    rdb = redis.StrictRedis()
+    rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     # dir_name / stream_name / basename = XXX.mpd,
     path, basename = pathname.rsplit('/', 1)
     dir_name, stream_name = path.rsplit('/', 1)
@@ -218,6 +218,7 @@ def m3u8_trans(pathname):
                     except Exception as e:
                         print(str(e))
                 first_media = False
+                time.sleep(0.1)
             media_path = path + '/' + line.rstrip()
             ip_port = None
             # Try 3 times if no box can be assigned, then use server ip port

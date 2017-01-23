@@ -21,5 +21,5 @@ if __name__ == '__main__':
     notifier   = pyinotify.Notifier(wm, handler)
     wm.add_watch(configfile.MPD_WATCH_PATH, mask, rec=True, auto_add=True)
     wm.add_watch(configfile.M3U8_WATCH_PATH, mask, rec=True, auto_add=True)
-    print("MPD Notifier start loop...")
+    print("Notifier start loop...")
     notifier.loop()
