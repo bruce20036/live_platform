@@ -81,7 +81,7 @@ def m3u8_trans(pathname):
     outfile.seek(0)
     first_media = True
     try:
-        generator = box_generator()
+        generator = box_generator(rdb)
     except Exception as e:
         logmsg(str(e))
         first_media = False
