@@ -97,38 +97,38 @@ def m3u8_trans(pathname):
 
     line = infile.readline()
     remain_segment = M3U8_MEDIA_AMOUNT
+    time_delay_tolerence = 1.0   #seconds (use float)
     while line:
         if '.ts' == line.rstrip()[-3:]:
-            ip_port = None
-            # Try 3 times if no box can be assigned, then use server ip port
-            for i in range(50):
+            head_time = int(line.split('.')[0])
+            # Send consecutive media to box in advance
+            for timeline in range(head_time, head_time+remain_segment):
+                media_path = path + '/' + str(timeline) + '.ts'
                 try:
-                    head_time = int(line.split('.')[0])
-                    # Send consecutive media to box in advance
-                    for timeline in range(head_time, head_time+remain_segment):
-                        media_path = path + '/' + str(timeline) + '.ts'
-                        try:
-                            if timeline == head_time and i==0:
-                                ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
-                            elif i==0:
-                                assign_box_to_media(rdb, expire_media_time, media_path)
-                            else:
-                                break
-                        except Exception as e:
-                            print(str(e))
+                    assign_box_to_media(rdb, expire_media_time, media_path)
                 except Exception as e:
-                        print(str(e))
-                if not ip_port:
-                    logmsg("Ready to try media path %d times: %s ."%(i+2, media_path))
-                    time.sleep(0.01)
-                else:
+                    print(str(e))
+            ip_port = None
+            start_time = time.time()
+            current_time = time.time()
+            media_path = path + '/' + line.rstrip()
+            time_step = 0.4
+            i = 0   # trial times
+            while current_time - start_time < time_delay_tolerence:
+                if rdb.hmget(media_path, "CHECK") == "True":
+                    ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
                     break
-                if i == 49:
-                    rdb.hmset(media_path, {"IP":SERVER_IP, "PORT":SERVER_PORT, "CHECK":"True"})
-                    rdb.expire(media_path, expire_media_time)
-                    ip_port = [SERVER_IP, SERVER_PORT]
-                    logmsg("Assign Server IP PORT to media_path: %s"%(media_path))
-                
+                if current_time - start_time >= time_step:
+                    logmsg("Ready to try media path %d times: %s ."%(i+2, media_path))
+                    ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
+                    time_step = time_step*2
+                    i+=1
+                current_time = time.time()
+            if ip_port == None:
+                rdb.hmset(media_path, {"IP":SERVER_IP, "PORT":SERVER_PORT, "CHECK":"True"})
+                rdb.expire(media_path, expire_media_time)
+                ip_port = [SERVER_IP, SERVER_PORT]
+                logmsg("Assign Server IP PORT to media_path: %s"%(media_path))
             # Modify current line
             ip_s, port_s = ip_port
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
@@ -168,6 +168,8 @@ def send_media_to_box(box_id, media_path):
     socket.send_multipart(data)
     infile.close()
     socket.close()
+    rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
+    rdb.hmset(media_path, {"SEND_TIME":str(time.time())})
 
    
 

@@ -79,6 +79,9 @@ def run_zmq_SUB_server(rdb):
                     rdb.expire(media_path, expire_media_time)
                     rdb.hmset(box_id, {"AVAILABLE":"True", "COUNT":'0'})
                     rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
+                    send_time = float(rdb.hmget(media_path, "SEND_TIME")[0])
+                    print "%s SEND TIME: %s sec"%(str(time.time()-send_time))
+                
 
 def expire_box_set_members(rdb):
     redis_box_set = configfile.REDIS_BOX_SET
