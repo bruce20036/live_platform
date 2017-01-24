@@ -1,6 +1,6 @@
 import pyinotify
 import configfile
-from server.tasks import mpd_trans, m3u8_trans, logmsg
+from server.tasks import  m3u8_trans, logmsg
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_MOVED_TO(self, event):
