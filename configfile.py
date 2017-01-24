@@ -10,7 +10,7 @@ M3U8_WRITE_DIR              = "/tmp/hls/media"
 M3U8_GET_DIR                = "hls/output/"
 BOX_MEDIA_WRITE_DIR         = "/tmp/hls/output"
 M3U8_WATCH_PATH             = M3U8_READ_DIR
-M3U8_MEDIA_AMOUNT           = 4
+M3U8_MEDIA_AMOUNT           = 12
 
 ### ZMQ SETTINGS
 # PUB-SUB MainTaining boxes' connections
