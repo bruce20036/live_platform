@@ -22,10 +22,9 @@ def logmsg(msg):
     logging.warning(msg)
 
 
-def box_generator(rdb):
-    M3U8_MEDIA_AMOUNT = configfile.M3U8_MEDIA_AMOUNT
-    box_list = rdb.zrangebyscore(redis_box_media_amount, 0, 'inf',
-                                 start=0, num=M3U8_MEDIA_AMOUNT)
+def box_generator(rdb, m3u8_media_amount):
+    box_list = rdb.zrangebyscore(configfile.REDIS_BOX_MEDIA_AMOUNT, 0, 'inf',
+                                 start=0, num=m3u8_media_amount)
     if not box_list:
         raise Exception("box_generator: No box available.")
     i = 0
@@ -82,7 +81,7 @@ def m3u8_trans(pathname):
     outfile.seek(0)
     first_media = True
     try:
-        generator = box_generator(rdb)
+        generator = box_generator(rdb, m3u8_media_amount)
     except Exception as e:
         logmsg(str(e))
         first_media = False
