@@ -15,7 +15,6 @@ except ImportError:
 # Create global context
 context = zmq.Context()
 
-
 def logmsg(msg):
     logging.basicConfig(format='%(name)s %(asctime)s: %(message)s',
                         datefmt='%Y/%m/%d %H:%M:%S')
@@ -50,7 +49,7 @@ def assign_media_to_box(rdb, box_generator, expire_media_time, media_path):
                            "ASSIGN_SERVER":"False"})
     rdb.expire(media_path, expire_media_time)
     send_media_to_box.delay(box_id, media_path)
-    logmsg("Assign %s ==> %s"%(box_id, media_path))
+    logmsg("Assign %s IP: %s PORT %s==> %s"%(box_id, ip_s, port_s, media_path))
     return True
     
     
@@ -67,7 +66,7 @@ def m3u8_trans(pathname):
     SERVER_IP           = configfile.SERVER_IP
     SERVER_PORT         = configfile.SERVER_PORT
     expire_media_time   = configfile.EXPIRE_MEDIA_TIME
-    m3u8_time_waiting   = configfile.M3U8_TIME_WAITING   #seconds (use float)
+    m3u8_time_waiting   = configfile.M3U8_TIME_WAITING   
     # Connect to redis 
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     # dir_name / stream_name / basename = XXX.mpd,

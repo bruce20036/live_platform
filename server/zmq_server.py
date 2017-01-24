@@ -74,8 +74,8 @@ def run_zmq_SUB_server(rdb):
                     rdb.expire(media_path, expire_media_time)
                     rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
                     send_time = rdb.hmget(media_path, "SEND_TIME")[0]
-                    logmsg("VERIFY MEDIA PATH: %s. SERVER ==> %s. SEND TIME: %s sec."%(media_path,
-                                                                                    box_id,
+                    logmsg("VERIFY MEDIA PATH: %s. SERVER ==> %s IP:%s PORT:%s. SEND TIME: %s sec."%(media_path,
+                                                                                    box_id, box_ip, box_port,
                                                                                     str(time.time()-float(send_time))))
     
 def expire_box_set_members(rdb):
