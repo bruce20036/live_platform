@@ -24,5 +24,3 @@ if __name__ == '__main__':
         expire_box_process.terminate()
         server_process.terminate()
         server_process.join()
-    
-

@@ -56,7 +56,7 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     socket.setsockopt(zmq.SUBSCRIBE, box_id)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     print("run_zmq_MEDIA_BOX start...")
-    while 1:
+    while True:
         data = socket.recv_multipart()
         if len(data)<3:
             continue

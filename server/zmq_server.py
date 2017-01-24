@@ -2,7 +2,7 @@ import zmq
 import time
 import redis
 import configfile
-from server.tasks import logmsg, update_M3U8
+from server.tasks import logmsg, logwarning, update_M3U8
 
 def run_zmq_SUB_server(rdb):
     """
@@ -44,6 +44,7 @@ def run_zmq_SUB_server(rdb):
         rdb.delete(box)
     rdb.delete(redis_box_set)
     rdb.delete(redis_box_media_amount)
+    logmsg("Server running...")
     while True:
             # Read envelope with address
             string = socket.recv_string()
@@ -63,18 +64,19 @@ def run_zmq_SUB_server(rdb):
                 topic, box_id, media_path = string.split(" ")
                 if rdb.exists(media_path):
                     box_ip, box_port = rdb.hmget(box_id, "IP", "PORT")
-                    if rdb.hmget(media_path, "USE_SERVER")[0] == "True":
-                        pre, stream_name, time_segment = media_path.rsplit('/', 2)
-                        m3u8_path = pre + "/" + stream_name + "/" + "index.m3u8"
-                        update_M3U8.delay(box_ip, box_port, time_segment, m3u8_path)
-                        rdb.hmset(media_path, {"USE_SERVER":"False",})
                     rdb.hmset(media_path, {"IP":box_ip, "PORT":box_port, "CHECK":"True"})
+                    if rdb.hmget(media_path, "ASSIGN_SERVER")[0] == "True":
+                        pre, stream_name, time_segment = media_path.rsplit('/', 2)
+                        m3u8_path = configfile.M3U8_WRITE_DIR + "/" + stream_name + "/" + "index.m3u8"
+                        update_M3U8.delay(box_ip, box_port, stream_name, time_segment, m3u8_path)
+                        rdb.hmset(media_path, {"ASSIGN_SERVER":"False",})
+                        logmsg("UPDATE %s WITH %s IN %s"%(media_path, box_id, m3u8_path))
                     rdb.expire(media_path, expire_media_time)
                     rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
-                    send_time = float(rdb.hmget(media_path, "SEND_TIME")[0])
-                    logmsg("%s. SEND TIME: %s sec. SERVER -> %s"%(media_path,
-                                                                  str(time.time()-send_time),
-                                                                  box_id))
+                    send_time = rdb.hmget(media_path, "SEND_TIME")[0]
+                    logmsg("VERIFY MEDIA PATH: %s. SERVER ==> %s. SEND TIME: %s sec."%(media_path,
+                                                                                    box_id,
+                                                                                    str(time.time()-float(send_time))))
     
 def expire_box_set_members(rdb):
     redis_box_set = configfile.REDIS_BOX_SET
