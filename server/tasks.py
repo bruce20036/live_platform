@@ -51,7 +51,7 @@ def m3u8_trans(pathname):
     # Import from configfile
     M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
     M3U8_GET_DIR        = configfile.M3U8_GET_DIR
-    M3U8_MEDIA_AMOUNT   = configfile.M3U8_MEDIA_AMOUNT
+    m3u8_media_amount   = configfile.M3U8_MEDIA_AMOUNT
     SERVER_IP           = configfile.SERVER_IP
     SERVER_PORT         = configfile.SERVER_PORT
     expire_media_time   = configfile.EXPIRE_MEDIA_TIME
@@ -91,7 +91,7 @@ def m3u8_trans(pathname):
             # Send consecutive media to box in advance
             if first_media:
                 head_time = int(line.split('.')[0])
-                for timeline in range(head_time, head_time+M3U8_MEDIA_AMOUNT):
+                for timeline in range(head_time, head_time+m3u8_media_amount):
                     media_path = path + '/' + str(timeline) + '.ts'
                     assign_media_to_box(rdb, generator, expire_media_time, media_path)
                 time.sleep(m3u8_time_waiting)
