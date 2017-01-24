@@ -67,7 +67,7 @@ def m3u8_trans(pathname):
     SERVER_IP           = configfile.SERVER_IP
     SERVER_PORT         = configfile.SERVER_PORT
     expire_media_time   = configfile.EXPIRE_MEDIA_TIME
-    m3u8_time_waiting   = 1.0   #seconds (use float)
+    m3u8_time_waiting   = configfile.M3U8_TIME_WAITING   #seconds (use float)
     # Connect to redis 
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     # dir_name / stream_name / basename = XXX.mpd,
