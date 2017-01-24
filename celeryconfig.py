@@ -5,5 +5,4 @@ result_serializer = 'json'
 accept_content = ['json']
 enable_utc = True
 imports = ["server.tasks"]
-task_routes = {'server.tasks.mpd_trans':{'queue':'media_queue'},
-               'server.tasks.m3u8_trans':{'queue':'media_queue'}}
+task_routes = {'server.tasks.send_media_to_box':{'queue':'send_queue'}}

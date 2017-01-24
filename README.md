@@ -50,7 +50,8 @@ redis-server
 - Start Celery (celery worker -A [project] -Q [Queue Name] -l info -c [concurrency worker])
  
 ```
-celery worker -A start_celery -Q media_queue,celery -l info -c 2
+celery worker -A start_celery -Q send_queue -l info -c 2
+celery worker -A start_celery -l info -c 2
 ```
 
 ##Install requirements

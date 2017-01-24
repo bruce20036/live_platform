@@ -21,42 +21,27 @@ def logmsg(msg):
                         datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.warning(msg)
 
- 
 
-def assign_box_to_media(rdb, expire_media_time, media_path):
-    if not os.path.isfile(media_path):
-        return
-    redis_box_media_amount = configfile.REDIS_BOX_MEDIA_AMOUNT
-    get_media = None
-    if rdb.exists(media_path):
-        get_media = rdb.hmget(media_path, "IP", "PORT", "CHECK")
-    if get_media == None or get_media[2] == 'False':
-        min_amount = 0
-        while True:
-            get_list = rdb.zrangebyscore(redis_box_media_amount, min_amount, min_amount,
-                                         withscores=True)
-            get_list += rdb.zrangebyscore(redis_box_media_amount, min_amount+1, '+inf',
-                                         withscores=True, start=0, num=1)
-            if not len(get_list):
-                break
-            for box in get_list:
-                if rdb.hmget(box[0], "AVAILABLE")[0] == "True":
-                    send_media_to_box.delay(box[0], media_path)
-                    ip_s, port_s = rdb.hmget(box[0], "IP", "PORT")
-                    rdb.hmset(media_path, {"IP":ip_s, "PORT":port_s, "CHECK":"False",})
-                    rdb.hmset(box[0], {"AVAILABLE": "False"})
-                    rdb.expire(media_path, expire_media_time)
-                    logmsg("Assign %s ==> %s"%(media_path, box[0]))
-                    return None
-            box_id, last_num = get_list[-1]
-            min_amount = int(last_num) + 1
-        return None
-    elif get_media[2] == 'True':
-        return [get_media[0], get_media[1]]
-    else:
-        raise Exception("assign_box_to_media: Something goes wrong %s."%(media_path))
+def box_generator(rdb):
+    M3U8_MEDIA_AMOUNT = configfile.M3U8_MEDIA_AMOUNT
+    box_list = rdb.zrangebyscore(redis_box_media_amount, 0, 'inf',
+                                 start=0, num=M3U8_MEDIA_AMOUNT)
+    if not box_list:
+        raise Exception("box_generator: No box available.")
+    i = 0
+    while True:
+        yield box_list[i]
+        i = (i+1) % len(box_list)
+
+def assign_media_to_box(rdb, box_generator, expire_media_time, media_path):
+    box_id = box_generator.next()
+    ip_s, port_s = rdb.hmget(box_id, "IP", "PORT")
+    rdb.hmset(media_path, {"IP":ip_s, "PORT":port_s, "CHECK":"False",
+                           "ASSIGN_SERVER":"False"})
+    rdb.expire(media_path, expire_media_time)
+    send_media_to_box.delay(box_id, media_path)
+    logmsg("Assign %s ==> %s"%(box_id, media_path))
     
-        
     
 @app.task
 def m3u8_trans(pathname):
@@ -67,10 +52,10 @@ def m3u8_trans(pathname):
     # Import from configfile
     M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
     M3U8_GET_DIR        = configfile.M3U8_GET_DIR
-    M3U8_MEDIA_AMOUNT   = configfile.M3U8_MEDIA_AMOUNT
     SERVER_IP           = configfile.SERVER_IP
     SERVER_PORT         = configfile.SERVER_PORT
     expire_media_time   = configfile.EXPIRE_MEDIA_TIME
+    m3u8_time_waiting   = 1.0   #seconds (use float)
     # Connect to redis 
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     # dir_name / stream_name / basename = XXX.mpd,
@@ -94,54 +79,67 @@ def m3u8_trans(pathname):
         outfile.close()
     outfile = open(output_dir, "r+")
     outfile.seek(0)
-
-    line = infile.readline()
-    remain_segment = M3U8_MEDIA_AMOUNT
-    time_delay_tolerence = 1.0   #seconds (use float)
+    first_media = True
+    try:
+        generator = box_generator()
+    except Exception as e:
+        logmsg(str(e))
+        first_media = False
+    line = infile.readline()  
     while line:
         if '.ts' == line.rstrip()[-3:]:
-            head_time = int(line.split('.')[0])
             # Send consecutive media to box in advance
-            for timeline in range(head_time, head_time+remain_segment):
-                media_path = path + '/' + str(timeline) + '.ts'
-                try:
-                    assign_box_to_media(rdb, expire_media_time, media_path)
-                except Exception as e:
-                    print(str(e))
-            ip_port = None
-            start_time = time.time()
-            current_time = time.time()
+            if first_media:
+                head_time = int(line.split('.')[0])
+                for timeline in range(head_time, head_time+remain_segment):
+                    media_path = path + '/' + str(timeline) + '.ts'
+                    assign_media_to_box(rdb, generator, expire_media_time, media_path)
+                time.sleep(m3u8_time_waiting)
+                first_media = True
+            ip_s, port_s = [None for i in range(2)]
             media_path = path + '/' + line.rstrip()
-            time_step = 0.4
-            i = 0   # trial times
-            while current_time - start_time < time_delay_tolerence:
-                if rdb.hmget(media_path, "CHECK") == "True":
-                    ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
-                    break
-                if current_time - start_time >= time_step:
-                    logmsg("Ready to try media path %d times: %s ."%(i+2, media_path))
-                    ip_port = assign_box_to_media(rdb, expire_media_time, media_path)
-                    time_step = time_step*2
-                    i+=1
-                current_time = time.time()
-            if ip_port == None:
-                rdb.hmset(media_path, {"IP":SERVER_IP, "PORT":SERVER_PORT, "CHECK":"True"})
+            if rdb.hmget(media_path, "CHECK") == "True":
+                ip_s, port_s = rdb.hmget(media_path, "IP", "PORT")
+            else:
+                rdb.hmset(media_path, {"IP":SERVER_IP, "PORT":SERVER_PORT,
+                                       "ASSIGN_SERVER":"True"})
                 rdb.expire(media_path, expire_media_time)
-                ip_port = [SERVER_IP, SERVER_PORT]
+                ip_s, port_s = [SERVER_IP, SERVER_PORT]
                 logmsg("Assign Server IP PORT to media_path: %s"%(media_path))
             # Modify current line
-            ip_s, port_s = ip_port
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
             line = get_url_prefix + M3U8_GET_DIR + stream_name + "/" + line
-            remain_segment -= 1
             # end if
         outfile.write(line)
         line = infile.readline()
     infile.close()
     outfile.truncate()
     outfile.close()
+
+@app.task
+def update_M3U8(ip_s, port_s, stream_name, time_segment, m3u8_path):
+    """
+    time_segment format: <time>.ts
+    """
+    M3U8_GET_DIR = configfile.M3U8_GET_DIR
+    get_url_prefix = "http://"+ip_s+":"+port_s+"/"
+    try:
+        fp = open(m3u8_path, "r+")
+    except IOError:
+        logmsg(' IOError in m3u8_trans() Pathname: %s.'%(pathname))
+        return
+    fp.seek(0)
+    line = fp.readline()
+    while line:
+        if str(time_segment) in line:
+            line = get_url_prefix + M3U8_GET_DIR + stream_name +\
+                   "/" + time_segment
+        fp.write(line)
+        line = fp.readline()
+    fp.truncate()
+    fp.close()
     
-      
+        
 @app.task
 def send_media_to_box(box_id, media_path):
     """
@@ -153,7 +151,7 @@ def send_media_to_box(box_id, media_path):
     global context
     socket = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
-    time.sleep(0.05)
+    #time.sleep(0.05)
     box_id = str(box_id)
     media_path = str(media_path)
     try:
@@ -171,113 +169,110 @@ def send_media_to_box(box_id, media_path):
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     rdb.hmset(media_path, {"SEND_TIME":str(time.time())})
 
-   
 
-@app.task
-def mpd_trans(pathname):
-    """
-    Get a list of boxes from redis, then insert box's IP PORT to MPD file.
-    At the same time, push it to queue for worker to execute send_media_to_box
-    """
-    # Connect to redis in order to get box's queryset
-    rdb = redis.StrictRedis()
-    random.seed(int(time.time()))
-    
-    # GET a list of box, try 5 times , if there's no avaiable
-    # box then log error and return
-    test = 5
-    while test > 0:
-        box_list = rdb.keys("box*")
-        if len(box_list) > 0:
-            break
-        time.sleep(1)
-        test -= 1
-        
-    if len(box_list) == 0:
-        logmsg("mpd_trans: No box in list")
-        return
-    
-    box = random.choice(box_list)
-    
-    ip_s, port_s = rdb.hmget(box, "IP", "PORT")
-    ip = "http://"+ip_s+":"+port_s+"/"
-    ip_mpd = "http://"+ip_s+":"+"8000"+"/"
-    
-    # dir_name / stream_name / basename = XXX.mpd,
-    path, basename = pathname.rsplit('/', 1)
-    dir_name, stream_name = path.rsplit('/', 1)
-    
-    # Open read file
-    try:
-        infile = open(pathname, "r")
-    except IOError:
-        logmsg(' IOError in mpd_trans() Pathname: %s.'%(pathname))
-        return
-    
-    # Mpd output path
-    output_folder = os.path.join(configfile.MPD_WRITE_DIR, stream_name)
-    output_dir = os.path.join(output_folder, basename)
-    # Check if the dir is created
-    if not os.path.isdir(output_folder):
-        subprocess.check_output(['mkdir', '-p', output_folder])
- 
-    # Open output file
-    if not os.path.exists(output_dir):
-        outfile = open(output_dir, "w")
-        outfile.close()
-    outfile = open(output_dir, "r+")
-    outfile.seek(0)
-    
-    line = infile.readline()
-    part = 1
-    
-    while line:
-        if "<S t=" in line:
-            pre_str, time_name, post_str = line.split("\"", 2)
-            outfile.write(line)
-    
-            if part == 1 and not rdb.sismember(path, time_name):
-                print path, " ", time_name
-                m4v_path = path+"/"+time_name+".m4v"
-                m4a_path = path+"/"+time_name+".m4a"
-                send_media_to_box.delay(box, m4v_path)
-                send_media_to_box.delay(box, m4a_path)
-                rdb.sadd(path, time_name)
-            
-        elif "media" in line:
-            pre_str, post_str = line.split("\"", 1)
-            concentrate_str = (pre_str + "\"" + ip_mpd +
-                               configfile.MPD_GET_DIR + "/" +
-                               stream_name + "/" + post_str)
-            outfile.write(concentrate_str+'\n')
-            
-        elif "initialization" in line:
-            pre_str, post_str = line.split("\"", 1)
-            #  media="ip/dash/output/stream_name/init.m4a"
-            concentrate_str = (pre_str + "\"" + ip_mpd +
-                               configfile.MPD_GET_DIR + "/" +stream_name +
-                               "/" + post_str)
-            outfile.write(concentrate_str+'\n')
-
-            if part == 1:
-                media_path = path + "/init.m4v"
-            else:
-                media_path = path + "/init.m4a"
-            send_media_to_box.delay(box, media_path)
-            
-        elif "audio/mp4" in line:
-            part = 2
-            outfile.write(line)
-            
-        else:
-            outfile.write(line)
-        line = infile.readline()
-        # End while
-    # Close file
-    rdb.expire(path, 200)
-    outfile.truncate()
-    infile.close()
-    outfile.close()
-
-
-
+# @app.task
+# def mpd_trans(pathname):
+#     """
+#     Get a list of boxes from redis, then insert box's IP PORT to MPD file.
+#     At the same time, push it to queue for worker to execute send_media_to_box
+#     """
+#     # Connect to redis in order to get box's queryset
+#     rdb = redis.StrictRedis()
+#     random.seed(int(time.time()))
+#     
+#     # GET a list of box, try 5 times , if there's no avaiable
+#     # box then log error and return
+#     test = 5
+#     while test > 0:
+#         box_list = rdb.keys("box*")
+#         if len(box_list) > 0:
+#             break
+#         time.sleep(1)
+#         test -= 1
+#         
+#     if len(box_list) == 0:
+#         logmsg("mpd_trans: No box in list")
+#         return
+#     
+#     box = random.choice(box_list)
+#     
+#     ip_s, port_s = rdb.hmget(box, "IP", "PORT")
+#     ip = "http://"+ip_s+":"+port_s+"/"
+#     ip_mpd = "http://"+ip_s+":"+"8000"+"/"
+#     
+#     # dir_name / stream_name / basename = XXX.mpd,
+#     path, basename = pathname.rsplit('/', 1)
+#     dir_name, stream_name = path.rsplit('/', 1)
+#     
+#     # Open read file
+#     try:
+#         infile = open(pathname, "r")
+#     except IOError:
+#         logmsg(' IOError in mpd_trans() Pathname: %s.'%(pathname))
+#         return
+#     
+#     # Mpd output path
+#     output_folder = os.path.join(configfile.MPD_WRITE_DIR, stream_name)
+#     output_dir = os.path.join(output_folder, basename)
+#     # Check if the dir is created
+#     if not os.path.isdir(output_folder):
+#         subprocess.check_output(['mkdir', '-p', output_folder])
+#  
+#     # Open output file
+#     if not os.path.exists(output_dir):
+#         outfile = open(output_dir, "w")
+#         outfile.close()
+#     outfile = open(output_dir, "r+")
+#     outfile.seek(0)
+#     
+#     line = infile.readline()
+#     part = 1
+#     
+#     while line:
+#         if "<S t=" in line:
+#             pre_str, time_name, post_str = line.split("\"", 2)
+#             outfile.write(line)
+#     
+#             if part == 1 and not rdb.sismember(path, time_name):
+#                 print path, " ", time_name
+#                 m4v_path = path+"/"+time_name+".m4v"
+#                 m4a_path = path+"/"+time_name+".m4a"
+#                 send_media_to_box.delay(box, m4v_path)
+#                 send_media_to_box.delay(box, m4a_path)
+#                 rdb.sadd(path, time_name)
+#             
+#         elif "media" in line:
+#             pre_str, post_str = line.split("\"", 1)
+#             concentrate_str = (pre_str + "\"" + ip_mpd +
+#                                configfile.MPD_GET_DIR + "/" +
+#                                stream_name + "/" + post_str)
+#             outfile.write(concentrate_str+'\n')
+#             
+#         elif "initialization" in line:
+#             pre_str, post_str = line.split("\"", 1)
+#             #  media="ip/dash/output/stream_name/init.m4a"
+#             concentrate_str = (pre_str + "\"" + ip_mpd +
+#                                configfile.MPD_GET_DIR + "/" +stream_name +
+#                                "/" + post_str)
+#             outfile.write(concentrate_str+'\n')
+# 
+#             if part == 1:
+#                 media_path = path + "/init.m4v"
+#             else:
+#                 media_path = path + "/init.m4a"
+#             send_media_to_box.delay(box, media_path)
+#             
+#         elif "audio/mp4" in line:
+#             part = 2
+#             outfile.write(line)
+#             
+#         else:
+#             outfile.write(line)
+#         line = infile.readline()
+#         # End while
+#     # Close file
+#     rdb.expire(path, 200)
+#     outfile.truncate()
+#     infile.close()
+#     outfile.close()
+# 

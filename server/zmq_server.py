@@ -2,16 +2,17 @@ import zmq
 import time
 import redis
 import configfile
-from server.tasks import logmsg
+from server.tasks import logmsg, update_M3U8
 
 def run_zmq_SUB_server(rdb):
     """
     - Redis Data structure
         - box_id (hash): key - box_id
-                         fields - "IP", "PORT", "AVAILABLE", "COUNT"
+                         fields - "IP", "PORT"
         
         - media_path (hash): key - media_path
-                             fields - "IP", "PORT", "CHECK"
+                             fields - "IP", "PORT", "CHECK", "SEND_TIME",
+                                      "ASSIGN_SERVER"
                          
         - redis_box_set (sorted set): key - redis_box_set
                                       score - int(time.time())
@@ -22,9 +23,6 @@ def run_zmq_SUB_server(rdb):
                                        member - box_id
                                        
     - Accept Boxes' maintain topic and  verify topic
-    
-    - If Box isn't available after the box pings server 2 times, then reset
-      box's available field in Redis to "True"
     
     """
     # Import variable from configfile
@@ -49,7 +47,6 @@ def run_zmq_SUB_server(rdb):
     while True:
             # Read envelope with address
             string = socket.recv_string()
-            logmsg(string)
             topic = string.split(' ', 1)[0]
             if topic == maintain_topic:
                 # BOX ID NEEDS TO BE "box-(UUID)"
@@ -58,31 +55,27 @@ def run_zmq_SUB_server(rdb):
                     continue
                 if not rdb.exists(box_id):
                     # ADD hash to redis, set box_id as key
-                    rdb.hmset(box_id, {"IP":box_ip, "PORT":box_port, "AVAILABLE":"True",
-                                       "COUNT":'0'})
-                else:
-                    available, count = rdb.hmget(box_id, "AVAILABLE", "COUNT")
-                    count = int(count)
-                    # Reset AVALABLE OF BOX after box pings server 2 times
-                    if available == "False" and count == 2:
-                        rdb.hmset(box_id, {"AVAILABLE":"True", "COUNT":'0'})
-                        logmsg("RESET AVAILABLE FIELD of %s"%(box_id))
-                    elif available == "False":
-                        rdb.hmset(box_id, {"COUNT":str(count+1)})
+                    rdb.hmset(box_id, {"IP":box_ip, "PORT":box_port})
                 rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
                 rdb.zadd(redis_box_media_amount, int(media_amount), box_id)
+                logmsg(string)
             elif topic == verify_topic:
                 topic, box_id, media_path = string.split(" ")
                 if rdb.exists(media_path):
                     box_ip, box_port = rdb.hmget(box_id, "IP", "PORT")
+                    if rdb.hmget(media_path, "USE_SERVER")[0] == "True":
+                        pre, stream_name, time_segment = media_path.rsplit('/', 2)
+                        m3u8_path = pre + "/" + stream_name + "/" + "index.m3u8"
+                        update_M3U8.delay(box_ip, box_port, time_segment, m3u8_path)
+                        rdb.hmset(media_path, {"USE_SERVER":"False",})
                     rdb.hmset(media_path, {"IP":box_ip, "PORT":box_port, "CHECK":"True"})
                     rdb.expire(media_path, expire_media_time)
-                    rdb.hmset(box_id, {"AVAILABLE":"True", "COUNT":'0'})
                     rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
                     send_time = float(rdb.hmget(media_path, "SEND_TIME")[0])
-                    print "%s SEND TIME: %s sec"%(str(time.time()-send_time))
-                
-
+                    logmsg("%s. SEND TIME: %s sec. SERVER -> %s"%(media_path,
+                                                                  str(time.time()-send_time),
+                                                                  box_id))
+    
 def expire_box_set_members(rdb):
     redis_box_set = configfile.REDIS_BOX_SET
     redis_box_media_amount = configfile.REDIS_BOX_MEDIA_AMOUNT
@@ -92,5 +85,5 @@ def expire_box_set_members(rdb):
             rdb.delete(box_id)
             rdb.zrem(redis_box_set, box_id)
             rdb.zrem(redis_box_media_amount, box_id)
-        time.sleep(0.5)
+        time.sleep(1)
 

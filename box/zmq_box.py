@@ -66,10 +66,6 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
         if "ts" == media_name[-2:]:
             output_folder   = configfile.BOX_MEDIA_WRITE_DIR + "/" + stream_name
             output_path     = output_folder + "/" + media_name
-        # Assume MPD
-        else:
-            output_folder   = configfile.BOX_MEDIA_WRITE_DIR + "/"+stream_name
-            output_path     = output_folder+"/"+media_name
         if rdb.zrank("Expired-"+output_folder, output_path):
             continue
         if not os.path.isdir(output_folder):
