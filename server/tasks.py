@@ -12,16 +12,13 @@ try:
 except ImportError:
     import queue
 
-# Create global context
-context = zmq.Context()
-
 def logmsg(msg):
-    logging.basicConfig(format='%(name)s %(asctime)s: %(message)s',
+    logging.basicConfig(format='%(name)s %(asctime)s:\n %(message)s',
                         datefmt='%Y/%m/%d %H:%M:%S')
     logging.warning(msg)
 
 def logwarning(msg):
-    logging.basicConfig(format='%(name)s %(asctime)s: %(message)s',
+    logging.basicConfig(format='%(name)s %(asctime)s:\n %(message)s',
                         datefmt='%Y/%m/%d %H:%M:%S')
     logging.error(msg)
 
@@ -163,8 +160,8 @@ def send_media_to_box(box_id, media_path):
     if not os.path.isfile(media_path):
         logwarning("send_media_to_box: %s file not found"%(media_path))
         return
-    global context
-    socket = context.socket(zmq.PUB)
+    context = zmq.Context()
+    socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     time.sleep(0.02)
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
@@ -183,9 +180,21 @@ def send_media_to_box(box_id, media_path):
     socket.send_multipart(data)
     infile.close()
     socket.close()
+    context.term()
     logmsg("Send %s to %s"%(media_path, box_id))
-
-
+    
+@app.task
+def send_media_box_update():
+    context = zmq.Context()
+    socket  = context.socket(zmq.PUB)
+    socket.connect(configfile.ZMQ_XSUB_ADDRESS)
+    rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
+    for box_id in rdb.keys("box-*"):
+        data = [box_id, "Update"]
+        socket.send_multipart(data)
+    socket.close()
+    context.term()
+    
 
 # @app.task
 # def mpd_trans(pathname):
@@ -292,4 +301,3 @@ def send_media_to_box(box_id, media_path):
 #     outfile.truncate()
 #     infile.close()
 #     outfile.close()
-# 
