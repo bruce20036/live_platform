@@ -16,6 +16,8 @@ if __name__ == '__main__':
     BOX_AMOUNT  = int(sys.argv[3])
     box_process = []
     rdb         = redis.StrictRedis(host=configfile.REDIS_HOST)
+    for item in rdb.keys("Expired*"):
+        rdb.delete(item)
     try:
         for i in range(BOX_AMOUNT):
             # GET RAMDOM UUID to set as box id

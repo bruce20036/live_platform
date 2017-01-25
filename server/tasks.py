@@ -26,12 +26,14 @@ def logwarning(msg):
 def box_generator(rdb, m3u8_media_amount):
     box_list = rdb.zrangebyscore(configfile.REDIS_BOX_MEDIA_AMOUNT, 0, 'inf',
                                  start=0, num=m3u8_media_amount)
+    print box_list
     if not box_list:
         yield None
         logwarning("box_generator: No box available.")
     else:
         i = 0
         while True:
+            print box_list[i]
             yield box_list[i]
             i = (i+1) % len(box_list)
 
