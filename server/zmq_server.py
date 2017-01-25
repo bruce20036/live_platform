@@ -23,12 +23,11 @@ def process_verify_topic(rdb, redis_box_set, expire_box_time, expire_media_time,
     if rdb.exists(media_path):
         box_ip, box_port = rdb.hmget(box_id, "IP", "PORT")
         rdb.hmset(media_path, {"IP":box_ip, "PORT":box_port, "CHECK":"True"})
-        if rdb.hmget(media_path, "ASSIGN_SERVER")[0] == "True":
-            pre, stream_name, time_segment = media_path.rsplit('/', 2)
-            m3u8_path = configfile.M3U8_WRITE_DIR + "/" + stream_name + "/" + "index.m3u8"
-            update_M3U8.delay(box_ip, box_port, stream_name, time_segment, m3u8_path)
-            rdb.hmset(media_path, {"ASSIGN_SERVER":"False",})
-            logmsg("UPDATE %s WITH %s IN %s"%(media_path, box_id, m3u8_path))
+        pre, stream_name, time_segment = media_path.rsplit('/', 2)
+        m3u8_path = configfile.M3U8_WRITE_DIR + "/" + stream_name + "/" + "index.m3u8"
+        update_M3U8.delay(box_ip, box_port, stream_name, time_segment, m3u8_path)
+        rdb.hmset(media_path, {"ASSIGN_SERVER":"False",})
+        logmsg("UPDATE %s WITH %s IN %s"%(media_path, box_id, m3u8_path))
         rdb.expire(media_path, expire_media_time)
         rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
         send_time = rdb.hmget(media_path, "SEND_TIME")[0]
