@@ -51,12 +51,11 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     socket.setsockopt(zmq.SUBSCRIBE, box_id)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     update_time = time.time()
-    current_time = time.time()
     logmsg("%s run_zmq_MEDIA_BOX start..."%(name))
     while time.time() - update_time <= update_duration:
         data = []
         try:
-            data = socket.recv_multipart()
+            data = socket.recv_multipart(zmq.NOBLOCK)
         except zmq.ZMQError, e:
                 pass
         if len(data)==2 and data[1]=="Update":
