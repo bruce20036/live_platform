@@ -101,6 +101,7 @@ def m3u8_trans(pathname):
                 for timeline in range(head_time, head_time+m3u8_media_amount):
                     media_path = path + '/' + str(timeline) + '.ts'
                     try:
+                        print timeline
                         assign_media_to_box(rdb, generator, expire_media_time, media_path)
                     except StopIteration:
                         break
