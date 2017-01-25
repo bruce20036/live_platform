@@ -18,7 +18,7 @@ def process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
     rdb.zadd(redis_box_media_amount, int(media_amount), box_id)
     logmsg(string)
 
-def process_verify_topic(rdb, redis_box_set, expire_media_time, string):
+def process_verify_topic(rdb, redis_box_set, expire_box_time, expire_media_time, string):
     topic, box_id, media_path = string.split(" ")
     if rdb.exists(media_path):
         box_ip, box_port = rdb.hmget(box_id, "IP", "PORT")
