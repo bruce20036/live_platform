@@ -97,7 +97,7 @@ def run_zmq_SUB_server(rdb):
                 process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
                                         expire_box_time, string)
             elif topic == verify_topic:
-                process_verify_topic(rdb, redis_box_set, expire_media_time, string)
+                process_verify_topic(rdb, redis_box_set, expire_box_time, expire_media_time, string)
             
                 
 def expire_box_set_members(rdb):
