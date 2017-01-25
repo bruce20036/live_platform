@@ -42,6 +42,7 @@ def assign_media_to_box(rdb, box_generator, expire_media_time, media_path):
         return
     box_id = box_generator.next()
     if not box_id:
+        logwarning("No available box for %s"%(media_path))
         return False
     ip_s, port_s = rdb.hmget(box_id, "IP", "PORT")
     rdb.hmset(media_path, {"IP":ip_s, "PORT":port_s, "CHECK":"False",
