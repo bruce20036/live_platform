@@ -5,8 +5,10 @@
 # Starts the at daemon  
 #
 
-RAMDISK_SIZE=200
-RAMDISK_PATH=/tmp/hls 
+# RAMDISK SETTINGS
+RAMDISK_SIZE="200"
+RAMDISK_PATH=/tmp/hls
+
 PACKAGE_PATH= /root/live_platform
 
 
@@ -14,6 +16,7 @@ PACKAGE_PATH= /root/live_platform
 mkdir -p RAMDISK_PATH
 mount -t tmpfs -o size={$RAMDISK_SIZE}M tmpfs {$RAMDISK_PATH}
 
+# Start redis-server
 
 
 

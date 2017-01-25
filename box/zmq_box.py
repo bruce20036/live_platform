@@ -52,15 +52,25 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     update_time = time.time()
     current_time = time.time()
-    print("%s run_zmq_MEDIA_BOX start..."%(name))
+    logmsg("%s run_zmq_MEDIA_BOX start..."%(name))
+    i=0
     while time.time() - update_time <= update_duration:
-        data = socket.recv_multipart()
-        if len(data)<3:
+        logmsg("%d"%(i))
+        i+=1
+        data = []
+        try:
+            data = socket.recv_multipart(zmq.NOBLOCK)
+        except zmq.ZMQError, e:
+            if e.errno == zmq.EAGAIN:
+                pass
+        if len(data)<3 and data:
             if data[1] == "Update":
                 update_time = time.time()
                 logmsg("%s: GET MEDIA BOX UPDATE FROM SERVER"%(name))
             else:
                 continue
+        else:
+            continue
         verify_socket.send_string("%s %s %s"%(verify_topic, box_id, data[1]))
         logmsg("%s: Get data in MEDIA_PATH: %s"%(name, data[1]))
         pre_dir, stream_name, media_name = data[1].rsplit("/", 2)
@@ -81,6 +91,7 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     socket.close()
     verify_socket.close()
     context.term()
+    logmsg("%s stops."%(name))
 
 def recycle_expired_boxes(rdb):
     print "Recycle Process Start..."
