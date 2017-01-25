@@ -26,14 +26,12 @@ def logwarning(msg):
 def box_generator(rdb, m3u8_media_amount):
     box_list = rdb.zrangebyscore(configfile.REDIS_BOX_MEDIA_AMOUNT, 0, 'inf',
                                  start=0, num=m3u8_media_amount)
-    print box_list
     if not box_list:
         yield None
         logwarning("box_generator: No box available.")
     else:
         i = 0
         while True:
-            print box_list[i]
             yield box_list[i]
             i = (i+1) % len(box_list)
 
@@ -101,7 +99,6 @@ def m3u8_trans(pathname):
                 for timeline in range(head_time, head_time+m3u8_media_amount):
                     time_path = path + '/' + str(timeline) + '.ts'
                     try:
-                        print timeline
                         assign_media_to_box(rdb, generator, expire_media_time, time_path)
                     except StopIteration:
                         break
