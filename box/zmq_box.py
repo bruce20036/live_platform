@@ -53,10 +53,7 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     update_time = time.time()
     current_time = time.time()
     logmsg("%s run_zmq_MEDIA_BOX start..."%(name))
-    i=0
     while time.time() - update_time <= update_duration:
-        logmsg("%d"%(i))
-        i+=1
         data = []
         try:
             data = socket.recv_multipart(zmq.NOBLOCK)

@@ -89,7 +89,7 @@ def run_zmq_SUB_server(rdb):
                                         expire_box_time, string)
             elif topic == verify_topic:
                 process_verify_topic(rdb, expire_media_time, string)
-            if time.time() - last_media_update_time >= media_box_update_duration:
+            if time.time() - last_media_update_time >= int(media_box_update_duration/3):
                 send_media_box_update.delay()
                 last_media_update_time = time.time()
                 
