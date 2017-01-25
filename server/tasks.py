@@ -26,6 +26,7 @@ def logwarning(msg):
 def box_generator(rdb, m3u8_media_amount):
     box_list = rdb.zrangebyscore(configfile.REDIS_BOX_MEDIA_AMOUNT, 0, 'inf',
                                  start=0, num=m3u8_media_amount)
+    print "BOX!!!!! ",box_list
     if not box_list:
         yield None
         logwarning("box_generator: No box available.")
@@ -35,7 +36,7 @@ def box_generator(rdb, m3u8_media_amount):
             yield box_list[i]
             i = (i+1) % len(box_list)
 
-def assign_media_to_box(rdb, box_generator, expire_media_time, media_path):
+def assign_media_to_box(rdb, box_generator, expire_media_time,  media_path):
     if not os.path.isfile(media_path) or rdb.exists(media_path):
         return
     box_id = box_generator.next()
