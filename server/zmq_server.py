@@ -33,7 +33,7 @@ def process_verify_topic(rdb, redis_box_set, expire_box_time, expire_media_time,
         rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
         send_time = rdb.hmget(media_path, "SEND_TIME")[0]
         logmsg("VERIFY MEDIA PATH: %s. \nSERVER ==> %s IP:%s PORT:%s. \nSEND TIME: %s sec."
-               %(media_path, box_id, box_ip, box_port, str(current_time-float(send_time))))
+               %(media_path, box_id, box_ip, box_port, str(time.time()-float(send_time))))
 
 
 def run_zmq_SUB_server(rdb):
