@@ -81,17 +81,24 @@ def run_zmq_SUB_server(rdb):
     logmsg("Server running...")
     while True:
             current_time = time.time()
-            # Read envelope with address
-            string = socket.recv_string()
+            if current_time - last_media_update_time >= media_box_update_duration/3:
+                send_media_box_update.delay()
+                last_media_update_time = time.time()
+            string = ''
+            try:
+                # Read envelope with address
+                string = socket.recv_string(zmq.NOBLOCK)
+            except zmq.ZMQError, e:
+                if e.errno == zmq.EAGAIN:
+                    pass
+            if not string: continue
             topic = string.split(' ', 1)[0]
             if topic == maintain_topic:
                 process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
                                         expire_box_time, string)
             elif topic == verify_topic:
                 process_verify_topic(rdb, expire_media_time, string)
-            if time.time() - last_media_update_time >= int(media_box_update_duration/3):
-                send_media_box_update.delay()
-                last_media_update_time = time.time()
+            
                 
 def expire_box_set_members(rdb):
     redis_box_set = configfile.REDIS_BOX_SET

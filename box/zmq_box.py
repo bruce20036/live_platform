@@ -56,18 +56,14 @@ def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
     while time.time() - update_time <= update_duration:
         data = []
         try:
-            data = socket.recv_multipart(zmq.NOBLOCK)
+            data = socket.recv_multipart()
         except zmq.ZMQError, e:
-            if e.errno == zmq.EAGAIN:
                 pass
-        if len(data)<3 and data:
-            if data[1] == "Update":
-                update_time = time.time()
-                logmsg("%s: GET MEDIA BOX UPDATE FROM SERVER"%(name))
-            else:
-                continue
-        else:
+        if len(data)==2 and data[1]=="Update":
+            update_time = time.time()
+            logmsg("%s: GET MEDIA BOX UPDATE FROM SERVER"%(name))
             continue
+        if len(data)<3: continue
         verify_socket.send_string("%s %s %s"%(verify_topic, box_id, data[1]))
         logmsg("%s: Get data in MEDIA_PATH: %s"%(name, data[1]))
         pre_dir, stream_name, media_name = data[1].rsplit("/", 2)

@@ -189,11 +189,11 @@ def send_media_box_update():
     socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
+    time.sleep(1)
     for box_id in rdb.keys("box-*"):
         data = [box_id, "Update"]
         socket.send_multipart(data)
-    socket.close()
-    context.term()
+
     
 
 # @app.task
