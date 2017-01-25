@@ -167,7 +167,7 @@ def send_media_to_box(box_id, media_path):
     context = zmq.Context()
     socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
-    time.sleep(0.02)
+    time.sleep(1)
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     box_id = str(box_id)
     media_path = str(media_path)
@@ -197,6 +197,7 @@ def send_media_box_update():
     for box_id in rdb.keys("box-*"):
         data = [box_id, "Update"]
         socket.send_multipart(data)
+    socket.close()
 
     
 
