@@ -19,7 +19,7 @@ class Box(object):
     def start_media_process(self, rdb):
         self.media_process = Process(name="Media_Box %d"%(self.num),
                                 target=run_zmq_MEDIA_BOX,
-                                args=(box_id, IP, PORT, rdb))
+                                args=(self.box_id, self.IP, self.PORT, rdb))
         self.media_process.start()
     
     def stop_media_process(self):
