@@ -10,7 +10,7 @@ from box.zmq_box import Box, recycle_expired_boxes
 GET_IP_URL = 'https://api.ipify.org?format=json'
 
 def get_ip():
-    return str(requests.get(GET_IP_URL, verify=False).json()["ip"])
+    return str(requests.get(GET_IP_URL).json()["ip"])
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
