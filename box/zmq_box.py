@@ -6,6 +6,7 @@ import subprocess
 import multiprocessing
 import configfile
 import logging
+from multiprocessing import Process
 from server.tasks import logmsg
 
 class Box(object):
@@ -64,7 +65,6 @@ def run_zmq_PUB_BOX(box_id, ip, port, rdb):
     name     = multiprocessing.current_process().name
     topic    = configfile.ZMQ_MT_TOPIC
     ping_sec = configfile.ZMQ_MT_BOX_UPDATE_SEC
-    
     #ZMQ SETTINGS
     context  = zmq.Context()
     socket   = context.socket(zmq.PUB)

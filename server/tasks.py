@@ -75,7 +75,7 @@ def m3u8_trans(pathname):
     try:
         infile = open(pathname, "r")
     except IOError:
-        logwarning(' IOError in m3u8_trans() Pathname: %s.'%(pathname))
+        logwarning('IOError in m3u8_trans() Pathname: %s.'%(pathname))
         return
     # m3u8 output path
     output_folder = os.path.join(M3U8_WRITE_DIR, stream_name)
