@@ -37,7 +37,7 @@ python run_notifier.py
 1. Start Redis
 2. append http server ip port
 ```
-python run_box.py [IP] [PORT]
+python run_box.py [port] [box_amount]
 ```
 ###Celery Worker Side
 
@@ -72,7 +72,7 @@ sudo pip install celery
 
 - Other requirements in pip
 ```
-sudo pip install pyzmq redis pyinotify
+sudo pip install pyzmq redis pyinotify requests
 ```
 
 - Nginx

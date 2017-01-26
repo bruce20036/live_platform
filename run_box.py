@@ -19,7 +19,7 @@ if __name__ == '__main__':
     IP          = get_ip()
     PORT        = sys.argv[1]
     BOX_AMOUNT  = int(sys.argv[2])
-    box_list = []
+    box_list    = []
     rdb         = redis.StrictRedis(host=configfile.REDIS_HOST)
     for item in rdb.keys("Expired*"):
         rdb.delete(item)
