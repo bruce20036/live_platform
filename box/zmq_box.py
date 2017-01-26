@@ -8,6 +8,53 @@ import configfile
 import logging
 from server.tasks import logmsg
 
+class Box(object):
+    def __init__(self, box_id, num, IP, PORT):
+        self.box_id = box_id
+        self.IP     = IP
+        self.PORT   = PORT
+        self.num    = num
+
+    def start_media_process(self, rdb):
+        self.media_process = Process(name="Media_Box %d"%(self.num),
+                                target=run_zmq_MEDIA_BOX,
+                                args=(box_id, IP, PORT, rdb))
+        self.media_process.start()
+    
+    def stop_media_process(self):
+        self.media_process.terminate()
+        self.media_process.join()
+        self.media_process = None
+    
+    def start_publish_process(self, rdb):
+        self.publish_process = Process(name="Publish_Box %d"%(self.num),
+                                      target=run_zmq_PUB_BOX,
+                                      args=(self.box_id, self.IP, self.PORT, rdb))
+        self.publish_process.start()
+    
+    def stop_publish_process(self):
+        self.publish_process.terminate()
+        self.publish_process.stop()
+        self.publish_process = None
+    
+    def start(self, rdb):
+        self.start_media_process(rdb)
+        self.start_publish_process(rdb)
+    
+    def stop(self):
+        self.stop_publish_process()
+        self.stop_media_process()
+
+    def update_IP(self, IP):
+        self.IP = IP
+    
+    def media_process_is_alive(self):
+        return self.media_process.is_alive()
+    
+    def __str__(self):
+        return "Box %d ID: %s"%(self.num, self.box_id)
+        
+        
 
 def run_zmq_PUB_BOX(box_id, ip, port, rdb):
     """
@@ -32,9 +79,11 @@ def run_zmq_PUB_BOX(box_id, ip, port, rdb):
         socket.send_string(msg)
         logmsg(name+" "+msg)
         time.sleep(ping_sec)
+    socket.close()
+    context.term()
         
         
-def run_zmq_MEDIA_BOX(box_id, ip, port, rdb):
+def run_zmq_MEDIA_BOX(box_id, rdb):
     """
     - Bind to IP PORT as subscriber in zmq
     - Receive message from server and write file
