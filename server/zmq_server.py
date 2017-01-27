@@ -2,7 +2,31 @@ import zmq
 import time
 import redis
 import configfile
+import random
 from server.tasks import logmsg, logwarning, update_M3U8, send_media_box_update
+
+"""
+- Redis Data structure
+    - box_id (hash): key - box_id
+                     fields - "IP", "PORT"
+    
+    - media_path (hash): key - media_path
+                         fields - "IP", "PORT", "CHECK", "SEND_TIME",
+                                  "ASSIGN_SERVER"
+                     
+    - redis_box_set (sorted set): key - redis_box_set
+                                  score - int(time.time())
+                                  member - box_id
+    
+    - box_media_load (sorted set): key - redis_box_media_amount
+                                   score - holding media amounts
+                                   member - box_id
+    - box's holding media(strings): key - "Media-"+ box_id + str(random.randint(0, 99999999999))
+                                    value - media_path
+                                   
+- Accept Boxes' maintain topic and  verify topic
+
+"""
 
 
 def process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
@@ -31,32 +55,16 @@ def process_verify_topic(rdb, redis_box_set, expire_box_time, expire_media_time,
             logmsg("UPDATE %s WITH %s IN %s"%(media_path, box_id, m3u8_path))
         rdb.expire(media_path, expire_media_time)
         rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
+        random.seed(int(time.time()))
+        box_media_key = "Media-"+ box_id + str(random.randint(0, 99999999999))
+        rdb.set(box_media_key, media_path)
+        rdb.expire(box_media_key, expire_media_time)
         send_time = rdb.hmget(media_path, "SEND_TIME")[0]
         logmsg("VERIFY MEDIA PATH: %s.\nSERVER ==> %s IP:%s PORT:%s.\nSEND TIME: %s sec."
                %(media_path, box_id, box_ip, box_port, str(time.time()-float(send_time))))
 
 
 def run_zmq_SUB_server(rdb):
-    """
-    - Redis Data structure
-        - box_id (hash): key - box_id
-                         fields - "IP", "PORT"
-        
-        - media_path (hash): key - media_path
-                             fields - "IP", "PORT", "CHECK", "SEND_TIME",
-                                      "ASSIGN_SERVER"
-                         
-        - redis_box_set (sorted set): key - redis_box_set
-                                      score - int(time.time())
-                                      member - box_id
-        
-        - box_media_load (sorted set): key - redis_box_media_amount
-                                       score - holding media amounts
-                                       member - box_id
-                                       
-    - Accept Boxes' maintain topic and  verify topic
-    
-    """
     # Import variable from configfile
     maintain_topic          = configfile.ZMQ_MT_TOPIC
     verify_topic            = configfile.ZMQ_VERIFY_TOPIC
@@ -97,7 +105,8 @@ def run_zmq_SUB_server(rdb):
                 process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
                                         expire_box_time, string)
             elif topic == verify_topic:
-                process_verify_topic(rdb, redis_box_set, expire_box_time, expire_media_time, string)
+                process_verify_topic(rdb, redis_box_set, expire_box_time,
+                                     expire_media_time, string)
             
                 
 def expire_box_set_members(rdb):
@@ -107,6 +116,46 @@ def expire_box_set_members(rdb):
         expire_box_list = rdb.zrangebyscore(redis_box_set, 0, int(time.time()))
         for box_id in expire_box_list:
             rdb.delete(box_id)
+            substitute_server_for_box(rdb, box_id)
             rdb.zrem(redis_box_set, box_id)
             rdb.zrem(redis_box_media_amount, box_id)
         time.sleep(1)
+
+
+def substitute_server_for_box(rdb, box_id):
+    IP                  = configfile.SERVER_IP
+    PORT                = configfile.SERVER_PORT
+    M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
+    for box_media in rdb.keys("Media-"+box_id+"*"):
+        media_path = rdb.get(box_media)
+        logmsg("DELETE %s %s"%(box_id, media_path))
+        pre, stream_name, time_segment = media_path.rsplit('/', 2)
+        m3u8_path = M3U8_WRITE_DIR + "/" + stream_name + "/" + "index.m3u8"
+        update_M3U8.delay(IP, PORT, stream_name, time_segment, m3u8_path)
+    rdb.delete("Media-"+box_id)
+    
+        
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

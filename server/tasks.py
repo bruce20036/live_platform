@@ -130,6 +130,7 @@ def update_M3U8(ip_s, port_s, stream_name, time_segment, m3u8_path):
     """
     time_segment format: <time>.ts
     """
+    logmsg("UPDATE M3U8:%s. IP:%s PORT:%s. TIME SEGMENT:%s"%(m3u8_path, ip_s, port_s, time_segment))
     M3U8_GET_DIR = configfile.M3U8_GET_DIR
     get_url_prefix = "http://"+ip_s+":"+port_s+"/"
     try:
@@ -150,6 +151,7 @@ def update_M3U8(ip_s, port_s, stream_name, time_segment, m3u8_path):
     for i in st:
         fp.write(i)
     fp.truncate()
+    fp.flush()
     fp.close()
     logmsg("Update %s."%(m3u8_path))
     
@@ -196,6 +198,8 @@ def send_media_box_update():
         data = [box_id, "Update"]
         socket.send_multipart(data)
     socket.close()
+    
+
 
     
 

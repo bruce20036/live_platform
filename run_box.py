@@ -10,8 +10,8 @@ from box.zmq_box import Box, recycle_expired_boxes
 GET_IP_URL = 'https://api.ipify.org?format=json'
 
 def get_ip():
-    return str(requests.get(GET_IP_URL).json()["ip"])
-
+    #return str(requests.get(GET_IP_URL).json()["ip"])
+    return "0.0.0.0"
 if __name__ == '__main__':
     if len(sys.argv) != 3:
         print ("python run_box.py [port] [box_amount]")
