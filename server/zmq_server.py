@@ -21,6 +21,7 @@ from server.tasks import logmsg, logwarning, update_M3U8, send_media_box_update
     - box_media_load (sorted set): key - redis_box_media_amount
                                    score - holding media amounts
                                    member - box_id
+                                   
     - box's holding media(strings): key - "Media-"+ box_id + str(random.randint(0, 99999999999))
                                     value - media_path
                                    
@@ -135,27 +136,3 @@ def substitute_server_for_box(rdb, box_id):
     rdb.delete("Media-"+box_id)
     
         
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

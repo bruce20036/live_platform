@@ -9,8 +9,16 @@ from box.zmq_box import Box, recycle_expired_boxes
 
 GET_IP_URL = 'https://api.ipify.org?format=json'
 
+def stop_all_process(box_list, BOX_AMOUNT):
+    for i in range(BOX_AMOUNT):
+        box_list[i].stop()
+
+def start_all_process(rdb, box_list, BOX_AMOUNT):
+    for i in range(BOX_AMOUNT):
+        box_list[i].start(rdb)
+
 def get_ip():
-    return str(requests.get(GET_IP_URL).json()["ip"])
+    return str(requests.get(GET_IP_URL, timeout=3).json()["ip"])
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
@@ -36,18 +44,19 @@ if __name__ == '__main__':
                                   args=(rdb,))
         recycle_process.start()
         while True:
-            for i in range(BOX_AMOUNT):
-                if not box_list[i].media_process_is_alive():
-                    box_list[i].stop_media_process()
-                    box_list[i].start_media_process(rdb)
-            check_ip = get_ip()
+            check_ip = ''
+            try:
+                check_ip = get_ip()
+            except  requests.exceptions.RequestException as e:
+                print e
+                stop_all_process(box_list, BOX_AMOUNT)
+                continue
             if IP != check_ip:
                 IP = check_ip
+                stop_all_process(box_list, BOX_AMOUNT)
                 for i in range(BOX_AMOUNT):
-                    box_list[i].stop_publish_process()
                     box_list[i].update_IP(IP)
-                    box_list[i].start_publish_process(rdb)
-            time.sleep(2)
+            start_all_process(rdb, box_list, BOX_AMOUNT)
     except KeyboardInterrupt:
         for i in range(BOX_AMOUNT):
             box_list[i].stop()

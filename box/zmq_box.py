@@ -11,10 +11,12 @@ from server.tasks import logmsg
 
 class Box(object):
     def __init__(self, box_id, num, IP, PORT):
-        self.box_id = box_id
-        self.IP     = IP
-        self.PORT   = PORT
-        self.num    = num
+        self.box_id             = box_id
+        self.IP                 = IP
+        self.PORT               = PORT
+        self.num                = num
+        self.media_process      = None
+        self.publish_process    = None
 
     def start_media_process(self, rdb):
         self.media_process = Process(name="Media_Box %d"%(self.num),
@@ -23,6 +25,8 @@ class Box(object):
         self.media_process.start()
     
     def stop_media_process(self):
+        if not self.media_process: return
+        logmsg("Stopping Media Box %d ..."%(self.num))
         self.media_process.terminate()
         self.media_process.join()
         self.media_process = None
@@ -34,14 +38,18 @@ class Box(object):
         self.publish_process.start()
     
     def stop_publish_process(self):
+        if not self.publish_process: return
+        logmsg("Stopping Publish Box %d ..."%(self.num))
         self.publish_process.terminate()
-        self.publish_process.stop()
+        self.publish_process.join()
         self.publish_process = None
     
     def start(self, rdb):
-        self.start_media_process(rdb)
-        self.start_publish_process(rdb)
-    
+        if not self.publish_process or not self.publish_process.is_alive():
+            self.start_publish_process(rdb)
+        if not self.media_process or not self.media_process.is_alive():
+            self.start_media_process(rdb)
+        
     def stop(self):
         self.stop_publish_process()
         self.stop_media_process()
