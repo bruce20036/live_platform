@@ -24,6 +24,7 @@ BOX_FILE=run_box.py
 PROCESS_NUMBER=4	#Number of Multiprocess for box
 # BASH SETTINGS
 PROCESS_NAME=run_box
+LOGFILE=${PACKAGE_PATH}/run_box.log
 
 start() {
 	# Create ramdisk
@@ -35,7 +36,7 @@ start() {
 	redis-server --daemonize yes
 	# Start box process by create a new screen
 	if [ -e $PACKAGE_PATH ];then
-		screen -dm python $PACKAGE_PATH/$BOX_FILE ${NGINX_HTTP_PORT} ${PROCESS_NUMBER}
+		nohup python ${PACKAGE_PATH}/${BOX_FILE} ${NGINX_HTTP_PORT} ${PROCESS_NUMBER} > ${LOGFILE} &
 	else
 		echo -e "PACKAGE MISSING, CAN'T START PROCESS"	
 	fi
