@@ -35,16 +35,18 @@ python run_notifier.py
 
 ###Box Side (Be careful that IP PORT(where zmq bind to) should not be same as nginx web server ip port)
 1. Start Redis
-2. append http server ip port
+2. Start Nginx
+3. append http server ip port
 ```
 python run_box.py [port] [box_amount]
 ```
+4. OR, install run_box in /etc/init.d to start automatically while booting.
 ###Celery Worker Side
 
 - Start redis
 
 ```
-redis-server
+redis-server --daemonize yes
 ```
 
 - Start Celery (celery worker -A [project] -Q [Queue Name] -l info -c [concurrency worker])
@@ -63,6 +65,12 @@ cd redis-stable
 make
 make test
 sudo make install
+sudo mkdir /etc/redis
+sudo mkdir /var/redis
+sudo cp utils/redis_init_script /etc/init.d/redis_6379
+sudo cp redis.conf /etc/redis/6379.conf  (edit daemonize no -> daemonize yes)
+sudo mkdir /var/redis/6379
+sudo update-rc.d redis_6379 defaults
 ```
 
 - Celery
@@ -106,6 +114,12 @@ sudo /usr/local/nginx/sbin/nginx -s stop
 - Mount ramdisk to specific directory
 ```
 mount -t tmpfs -o size=200M tmpfs /tmp/hls/
+```
+
+- Start box process while booting
+```
+sudo cp box_init /etc/init.d
+sudo update-rc.d box_init defaults
 ```
 
 ##Note
