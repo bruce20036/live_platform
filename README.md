@@ -124,6 +124,7 @@ mount -t tmpfs -o size=200M tmpfs /tmp/hls/
 - Start box process while booting
 ```
 sudo cp box_init /etc/init.d
+sudo chmod a+x /etc/init.d/box_init
 sudo update-rc.d box_init defaults
 ```
 

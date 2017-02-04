@@ -55,7 +55,6 @@ case "$1" in
         stop
         ;;
     status)
-		tail -f $LOGFILE
         ;;
     restart|reload|condrestart)
         stop
