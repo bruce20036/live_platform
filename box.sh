@@ -43,6 +43,7 @@ start() {
 
 stop() {
 	/usr/local/nginx/sbin/nginx -s stop
+	redis-cli shutdown
 	pkill -9 python
 }
 
