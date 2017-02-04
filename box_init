@@ -34,7 +34,7 @@ start() {
 	/usr/local/nginx/sbin/nginx
 	# Start box process in background
 	if [ -e $PACKAGE_PATH ];then
-		nohup python ${PACKAGE_PATH}/${BOX_FILE} ${NGINX_HTTP_PORT} ${PROCESS_NUMBER} > ${LOGFILE} &
+		nohup python ${PACKAGE_PATH}/${BOX_FILE} ${NGINX_HTTP_PORT} ${PROCESS_NUMBER} > ${LOGFILE} 2>&1&
 	else
 		echo -e "PACKAGE MISSING, CAN'T START PROCESS"	
 	fi
