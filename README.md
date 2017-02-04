@@ -41,6 +41,11 @@ python run_notifier.py
 python run_box.py [port] [box_amount]
 ```
 4. OR, install run_box in /etc/init.d to start automatically while booting.
+```
+sudo service box_init stop
+sudo service box_init status
+sudo service box_init start
+```
 ###Celery Worker Side
 
 - Start redis
