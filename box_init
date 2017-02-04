@@ -32,9 +32,7 @@ start() {
 	mount -t tmpfs -o size=${RAMDISK_SIZE}M tmpfs ${RAMDISK_PATH}
 	# Start Nginx server
 	/usr/local/nginx/sbin/nginx
-	# Start Redis server
-	redis-server --daemonize yes
-	# Start box process by create a new screen
+	# Start box process in background
 	if [ -e $PACKAGE_PATH ];then
 		nohup python ${PACKAGE_PATH}/${BOX_FILE} ${NGINX_HTTP_PORT} ${PROCESS_NUMBER} > ${LOGFILE} &
 	else
@@ -57,6 +55,7 @@ case "$1" in
         stop
         ;;
     status)
+		tail -f $LOGFILE
         ;;
     restart|reload|condrestart)
         stop
