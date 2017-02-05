@@ -24,7 +24,10 @@ if __name__ == '__main__':
     if len(sys.argv) != 3:
         print ("python run_box.py [port] [box_amount]")
         sys.exit(1)
-    IP          = get_ip()
+    try:
+        IP = get_ip()
+    except  requests.exceptions.RequestException as e:
+        IP = None
     PORT        = sys.argv[1]
     BOX_AMOUNT  = int(sys.argv[2])
     box_list    = []
@@ -37,7 +40,7 @@ if __name__ == '__main__':
             box_id = "box-"+str(uuid.uuid4())
             print("Your Box %d ID: %s "%(i+1, str(box_id)))
             box = Box(box_id, i+1, IP, PORT)
-            box.start(rdb)
+            if IP: box.start(rdb)
             box_list.append(box)
         recycle_process = Process(name="Recycle Process",
                                   target=recycle_expired_boxes,
