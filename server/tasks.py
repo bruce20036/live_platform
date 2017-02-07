@@ -30,6 +30,7 @@ def mother_m3u8_modify(pathname):
     M3U8_WRITE_FOLDER   = configfile.M3U8_WRITE_DIR.rsplit('/', 1)[1]
     server_http_url     = "http://" + SERVER_IP + ":" + SERVER_PORT + "/" + \
                           M3U8_WRITE_FOLDER + "/"
+    output_dir          = configfile.M3U8_WRITE_DIR + "/" + pathname.rsplit('/',1)[1]
     try:
         fp = open(pathname, "r+")
     except IOError:
@@ -44,13 +45,17 @@ def mother_m3u8_modify(pathname):
             line = server_http_url + line
         st.append(line)
         line = fp.readline()
-    # Write items in list from the beginning of the file
-    fp.seek(0)
+    
+    if not os.path.exists(output_dir):
+        outfile = open(output_dir, "w")
+        outfile.close()
+    outfile = open(output_dir, "r+")
+    outfile.seek(0)
     for i in st:
-        fp.write(i)
-    fp.truncate()
-    fp.flush()
-    fp.close()
+        outfile.write(i)
+    outfile.truncate()
+    outfile.flush()
+    outfile.close()
     logmsg("Update Mother M3U8 %s."%(pathname))
 
 
