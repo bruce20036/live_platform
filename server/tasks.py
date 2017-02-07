@@ -192,15 +192,17 @@ def send_media_to_box(media_path):
     if not os.path.isfile(media_path):
         logwarning("send_media_to_box: %s file not found"%(media_path))
         return
+    rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
+    if not rdb.exists(media_path): return
+    box_id = rdb.hmget(media_path, "BOX_ID")[0]
+    if not box_id:
+        send_media_to_box.delay(media_path)
+        logwarning("Media path hasn't assigned to a box yet, try again: %s"%(media_path))
+        return
     context = zmq.Context()
     socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
-    rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
-    box_id = rdb.hmget(media_path, "BOX_ID")[0]
-    if not box_id:
-        logwarning("Media path doesn't exist in redis: %s"%(media_path))
-        return
     media_path = str(media_path)
     try:
         infile = open(media_path, "rb")
