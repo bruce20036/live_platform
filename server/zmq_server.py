@@ -177,7 +177,7 @@ def media_sending_process(rdb):
         # Send data
         socket.send_multipart(data)
         infile.close()
-        logmsg("Send %s to %s"%(media_path, box_id))
+        logmsg("SEND %s TO %s"%(media_path, box_id))
 
     
     

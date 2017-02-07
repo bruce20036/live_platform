@@ -56,7 +56,7 @@ def mother_m3u8_modify(pathname):
     outfile.truncate()
     outfile.flush()
     outfile.close()
-    logmsg("Update Mother M3U8 %s."%(pathname))
+    logmsg("MODIFY MOTHER M3U8 %s."%(pathname))
 
 
 def box_generator(rdb, m3u8_media_amount):
