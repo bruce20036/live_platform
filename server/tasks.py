@@ -185,12 +185,12 @@ def update_M3U8(ip_s, port_s, stream_name, time_segment, m3u8_path):
     fp.close()
     logmsg("Update %s."%(m3u8_path))
     
-        
+"""        
 @app.task
 def send_media_to_box(media_path):
-    """
-    Send media tasks to boxes via proxy server
-    """
+    
+    # Send media tasks to boxes via proxy server
+
     media_path = str(media_path)
     m3u8_media_amount   = configfile.M3U8_MEDIA_AMOUNT
     expire_media_time   = configfile.EXPIRE_MEDIA_TIME
@@ -226,7 +226,7 @@ def send_media_to_box(media_path):
     socket.close()
     context.term()
     logmsg("Send %s to %s"%(media_path, box_id))
-    
+"""    
 @app.task
 def send_media_box_update():
     context = zmq.Context()

@@ -28,8 +28,8 @@ ZMQ_XPUB_ADDRESS            = "tcp://140.115.153.211:6000"  # Where media_boxes 
 # SERVER's HTTP Server IP PORT
 SERVER_IP                   = "140.115.153.211"
 SERVER_PORT                 = "8000"
-
-MEDIA_BOX_UDPATE_DURATION   = 9   # Server will send it every    MEDIA_BOX_UDPATE_DURATION/3 
+MEDIA_BOX_UDPATE_DURATION   = 9   # Server will send it every    MEDIA_BOX_UDPATE_DURATION/3
+SEND_MEDIA_QUEUE_NAME       = "SEND_MEDIA_QUEUE"
 
 # Redis settings
 REDIS_HOST                  = '127.0.0.1'

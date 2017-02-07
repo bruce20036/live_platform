@@ -1,4 +1,4 @@
-from server.zmq_server import run_zmq_SUB_server, expire_box_set_members
+from server.zmq_server import run_zmq_SUB_server, expire_box_set_members, media_sending_process
 import multiprocessing
 import zmq
 import time
@@ -10,7 +10,9 @@ if __name__ == '__main__':
         rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
         server_process      = multiprocessing.Process(target=run_zmq_SUB_server, args=(rdb,))
         expire_box_process  = multiprocessing.Process(target=expire_box_set_members, args=(rdb,))
+        media_process       = multiprocessing.Process(target=media_sending_process, args=(rdb,))
         server_process.start()
+        media_process.start()
         expire_box_process.start()
         context         = zmq.Context()
         socket_sub      = context.socket(zmq.SUB)
@@ -23,4 +25,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         expire_box_process.terminate()
         server_process.terminate()
+        media_process.terminate()
         server_process.join()
+        media_process.join()

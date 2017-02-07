@@ -3,7 +3,9 @@ import time
 import redis
 import configfile
 import random
-from server.tasks import logmsg, logwarning, update_M3U8, send_media_box_update
+from multiprocessing import Process
+from server.tasks import logmsg, logwarning, update_M3U8, send_media_box_update,\
+                         box_generator, assign_media_to_box
 
 """
 - Redis Data structure
@@ -134,5 +136,47 @@ def substitute_server_for_box(rdb, box_id):
         m3u8_path = M3U8_WRITE_DIR + "/" + stream_name + "/" + "index.m3u8"
         update_M3U8.delay(IP, PORT, stream_name, time_segment, m3u8_path)
     rdb.delete("Media-"+box_id)
+
+def media_sending_process(rdb):
+    """
+        Send media to boxes via proxy server
+    """
+    SEND_MEDIA_QUEUE_NAME   = configfile.SEND_MEDIA_QUEUE_NAME
+    m3u8_media_amount       = configfile.M3U8_MEDIA_AMOUNT
+    expire_media_time       = configfile.EXPIRE_MEDIA_TIME
+
+    context = zmq.Context()
+    socket  = self.context.socket(zmq.PUB)
+    socket.connect(configfile.ZMQ_XSUB_ADDRESS)
+    time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     
-        
+    while True:
+        media_path = rdb.lpop(SEND_MEDIA_QUEUE_NAME)
+        if not media_path: continue
+        media_path = str(media_path)
+        if not os.path.isfile(media_path):
+            logwarning("send_media_to_box: %s file not found"%(media_path))
+            return
+        if not rdb.exists(media_path): return
+        box_id = rdb.hmget(media_path, "BOX_ID")[0]
+        if not box_id:
+            generator = box_generator(rdb, m3u8_media_amount)
+            assign_media_to_box(rdb, generator, expire_media_time, media_path)
+        box_id = str(box_id)    
+        try:
+            infile = open(media_path, "rb")
+        except:
+            logwarning("send_media_to_box can't open %s" % (media_path))
+            return
+        # Use BOX_ID as TOPIC
+        data = [box_id, media_path]
+        data.append(infile.read())
+        rdb.hmset(media_path, {"SEND_TIME":str(time.time())})
+        # Send data
+        socket.send_multipart(data)
+        infile.close()
+        logmsg("Send %s to %s"%(media_path, box_id))
+
+    
+    
+    
