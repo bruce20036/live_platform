@@ -153,7 +153,7 @@ def media_sending_process(rdb):
     rdb.delete(SEND_MEDIA_QUEUE_NAME)
     
     while True:
-        media_path = rdb.blpop(SEND_MEDIA_QUEUE_NAME)
+        media_path = rdb.blpop(SEND_MEDIA_QUEUE_NAME)[1]
         media_path = str(media_path)
         if not os.path.isfile(media_path):
             logwarning("send_media_to_box: %s file not found"%(media_path))
