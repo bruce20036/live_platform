@@ -74,7 +74,6 @@ def box_generator(rdb, m3u8_media_amount):
 
 def assign_media_to_box(rdb, box_generator, expire_media_time,  media_path):
     if (not os.path.isfile(media_path) or
-        rdb.exists(media_path) or
         rdb.hmget(media_path, "BOX_ID")[0]):
         return
     box_id = box_generator.next()
@@ -93,6 +92,7 @@ def m3u8_trans(pathname):
     - Read line from m3u8
     - Assign each media segment to different boxes
     """
+    logmsg("M3U8_TRANS PATHNAME: %s"%(pathname))
     # Import from configfile
     M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
     M3U8_GET_DIR        = configfile.M3U8_GET_DIR

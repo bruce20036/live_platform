@@ -64,7 +64,7 @@ def process_verify_topic(rdb, redis_box_set, expire_box_time, expire_media_time,
         rdb.set(box_media_key, media_path)
         rdb.expire(box_media_key, expire_media_time)
         send_time = rdb.hmget(media_path, "SEND_TIME")[0]
-        logmsg("VERIFY MEDIA PATH: %s.\nSERVER ==> %s IP:%s PORT:%s.\nSEND TIME: %s sec."
+        logmsg("VERIFY MEDIA PATH: %s.\n SERVER ==> %s IP:%s PORT:%s.\n SEND TIME: %s sec."
                %(media_path, box_id, box_ip, box_port, str(time.time()-float(send_time))))
 
 
@@ -164,6 +164,7 @@ def media_sending_process(rdb):
         if not box_id:
             generator = box_generator(rdb, m3u8_media_amount)
             assign_media_to_box(rdb, generator, expire_media_time, media_path)
+            box_id = rdb.hmget(media_path, "BOX_ID")[0]
         box_id = str(box_id)    
         try:
             infile = open(media_path, "rb")

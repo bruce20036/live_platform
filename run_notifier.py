@@ -18,7 +18,6 @@ class EventHandler(pyinotify.ProcessEvent):
     
     def process_IN_CLOSE_WRITE(self, event):
         if ".ts" == event.pathname[-3:]:
-            self.rdb.hmset(event.pathname, {"TS_COMPLETE":True})
             self.rdb.rpush(configfile.SEND_MEDIA_QUEUE_NAME, event.pathname)
             #send_media_to_box.delay(event.pathname)
             logmsg("EventHandler process_IN_CLOSE_WRITE: %s"%(event.pathname))
