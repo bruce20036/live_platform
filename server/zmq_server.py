@@ -3,6 +3,7 @@ import time
 import redis
 import configfile
 import random
+import os
 from multiprocessing import Process
 from server.tasks import logmsg, logwarning, update_M3U8, send_media_box_update,\
                          box_generator, assign_media_to_box
