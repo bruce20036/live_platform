@@ -191,20 +191,26 @@ def send_media_to_box(media_path):
     """
     Send media tasks to boxes via proxy server
     """
+    media_path = str(media_path)
+    m3u8_media_amount   = configfile.M3U8_MEDIA_AMOUNT
+    expire_media_time   = configfile.EXPIRE_MEDIA_TIME
+    
     if not os.path.isfile(media_path):
         logwarning("send_media_to_box: %s file not found"%(media_path))
         return
+    
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     if not rdb.exists(media_path): return
     box_id = rdb.hmget(media_path, "BOX_ID")[0]
     if not box_id:
-        generator   = box_generator(rdb, m3u8_media_amount)
-        box_id      = generator.next()
-        assign_media_to_box(rdb, generator, configfile.EXPIRE_MEDIA_TIME, media_path)
+        generator = box_generator(rdb, m3u8_media_amount)
+        assign_media_to_box(rdb, generator, expire_media_time, media_path)
+        
     context = zmq.Context()
     socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
+    
     try:
         infile = open(media_path, "rb")
     except:
