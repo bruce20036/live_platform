@@ -11,7 +11,7 @@ from server.tasks import logmsg, logwarning, update_M3U8, send_media_box_update
                      fields - "IP", "PORT"
     
     - media_path (hash): key - media_path
-                         fields - "IP", "PORT", "CHECK", "SEND_TIME",
+                         fields - "BOX_ID", "IP", "PORT", "CHECK", "SEND_TIME",
                                   "ASSIGN_SERVER"
                      
     - redis_box_set (sorted set): key - redis_box_set
@@ -22,11 +22,11 @@ from server.tasks import logmsg, logwarning, update_M3U8, send_media_box_update
                                    score - holding media amounts
                                    member - box_id
                                    
-    - box's holding media(strings): key - "Media-"+ box_id + str(random.randint(0, 99999999999))
+    - box's holding media(strings): key - "Media-"+ box_id +
+                                           str(random.randint(0, 99999999999))
                                     value - media_path
                                    
 - Accept Boxes' maintain topic and  verify topic
-
 """
 
 

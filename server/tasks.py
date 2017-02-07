@@ -21,6 +21,38 @@ def logwarning(msg):
     logging.basicConfig(format='%(name)s %(asctime)s:\n %(message)s',
                         datefmt='%Y/%m/%d %H:%M:%S')
     logging.error(msg)
+    
+
+
+@app.task
+def mother_m3u8_modify(pathname):
+    SERVER_IP           = configfile.SERVER_IP
+    SERVER_PORT         = configfile.SERVER_PORT
+    M3U8_WRITE_FOLDER   = configfile.M3U8_WRITE_DIR.rsplit('/', 1)[1]
+    server_http_url     = "http://" + SERVER_IP + ":" + SERVER_PORT + "/" + \
+                          M3U8_WRITE_FOLDER + "/"
+    try:
+        fp = open(pathname, "r+")
+    except IOError:
+        logwarning(' IOError in mother_m3u8_modify Pathname: %s.'%(pathname))
+        return
+    fp.seek(0)
+    st = []
+    line = fp.readline()
+    # Read each line in file, modify lines and append it to list
+    while line:
+        if ".m3u8" in line:
+            line = server_http_url + line
+        st.append(line)
+        line = fp.readline()
+    # Write items in list from the beginning of the file
+    fp.seek(0)
+    for i in st:
+        fp.write(i)
+    fp.truncate()
+    fp.flush()
+    fp.close()
+    logmsg("Update Mother M3U8 %s."%(pathname))
 
 
 def box_generator(rdb, m3u8_media_amount):
@@ -42,15 +74,12 @@ def assign_media_to_box(rdb, box_generator, expire_media_time,  media_path):
     box_id = box_generator.next()
     if not box_id:
         logwarning("No available box for %s"%(media_path))
-        return False
+        return
     ip_s, port_s = rdb.hmget(box_id, "IP", "PORT")
-    rdb.hmset(media_path, {"IP":ip_s, "PORT":port_s, "CHECK":"False",
-                           "ASSIGN_SERVER":"False"})
+    rdb.hmset(media_path, {"BOX_ID":box_id, "IP":ip_s, "PORT":port_s,
+                           "CHECK":"False", "ASSIGN_SERVER":"False"})
     rdb.expire(media_path, expire_media_time)
-    send_media_to_box.delay(box_id, media_path)
     logmsg("Assign %s IP: %s PORT %s==> %s"%(box_id, ip_s, port_s, media_path))
-    return True
-    
     
 @app.task
 def m3u8_trans(pathname):
@@ -157,7 +186,7 @@ def update_M3U8(ip_s, port_s, stream_name, time_segment, m3u8_path):
     
         
 @app.task
-def send_media_to_box(box_id, media_path):
+def send_media_to_box(media_path):
     """
     Send media tasks to boxes via proxy server
     """
@@ -169,7 +198,7 @@ def send_media_to_box(box_id, media_path):
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
-    box_id = str(box_id)
+    box_id = rdb.hmget(media_path, "BOX_ID")[0]
     media_path = str(media_path)
     try:
         infile = open(media_path, "rb")
