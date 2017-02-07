@@ -23,7 +23,6 @@ def logwarning(msg):
     logging.error(msg)
     
 
-
 @app.task
 def mother_m3u8_modify(pathname):
     SERVER_IP           = configfile.SERVER_IP
@@ -199,6 +198,9 @@ def send_media_to_box(media_path):
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     rdb = redis.StrictRedis(host=configfile.REDIS_HOST)
     box_id = rdb.hmget(media_path, "BOX_ID")[0]
+    if not box_id:
+        logwarning("Media path doesn't exist in redis: %s"%(media_path))
+        return
     media_path = str(media_path)
     try:
         infile = open(media_path, "rb")
