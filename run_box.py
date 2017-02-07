@@ -59,6 +59,7 @@ if __name__ == '__main__':
                 stop_all_process(box_list, BOX_AMOUNT)
                 continue
             if IP != check_ip:
+                print "IP CHANGED: %s -> %s"%(IP, check_ip)
                 IP = check_ip
                 stop_all_process(box_list, BOX_AMOUNT)
                 for i in range(BOX_AMOUNT):
