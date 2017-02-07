@@ -158,8 +158,8 @@ def media_sending_process(rdb):
         media_path = str(media_path)
         if not os.path.isfile(media_path):
             logwarning("send_media_to_box: %s file not found"%(media_path))
-            return
-        if not rdb.exists(media_path): return
+            continue
+        if not rdb.exists(media_path): continue
         box_id = rdb.hmget(media_path, "BOX_ID")[0]
         if not box_id:
             generator = box_generator(rdb, m3u8_media_amount)
@@ -170,7 +170,7 @@ def media_sending_process(rdb):
             infile = open(media_path, "rb")
         except:
             logwarning("send_media_to_box can't open %s" % (media_path))
-            return
+            continue
         # Use BOX_ID as TOPIC
         data = [box_id, media_path]
         data.append(infile.read())
