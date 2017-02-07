@@ -146,7 +146,7 @@ def media_sending_process(rdb):
     expire_media_time       = configfile.EXPIRE_MEDIA_TIME
 
     context = zmq.Context()
-    socket  = self.context.socket(zmq.PUB)
+    socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
     
