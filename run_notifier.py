@@ -18,8 +18,7 @@ class EventHandler(pyinotify.ProcessEvent):
     
     def process_IN_CLOSE_WRITE(self, event):
         if ".ts" == event.pathname[-3:]:
-            rdb.hmset(event.pathname, {"TS_COMPLETE":True})
-            rdb.expire(configfile.EXPIRE_MEDIA_TIME)
+            self.rdb.hmset(event.pathname, {"TS_COMPLETE":True})
             send_media_to_box.delay(event.pathname)
             logmsg("EventHandler process_IN_CLOSE_WRITE: %s"%(event.pathname))
             
@@ -28,7 +27,7 @@ if __name__ == '__main__':
     rdb        = redis.StrictRedis(host=configfile.REDIS_HOST)
     wm         = pyinotify.WatchManager() # Watch Manager
     mask       = pyinotify.IN_MOVED_TO | pyinotify.IN_CLOSE_WRITE | pyinotify.IN_CREATE
-    handler    = EventHandler(rdb)
+    handler    = EventHandler(rdb=rdb)
     notifier   = pyinotify.Notifier(wm, handler)
     wm.add_watch(configfile.M3U8_WATCH_PATH, mask, rec=True, auto_add=True)
     print("Notifier start loop...")

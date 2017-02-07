@@ -68,7 +68,9 @@ def box_generator(rdb, m3u8_media_amount):
             i = (i+1) % len(box_list)
 
 def assign_media_to_box(rdb, box_generator, expire_media_time,  media_path):
-    if not os.path.isfile(media_path) or rdb.exists(media_path):
+    if (not os.path.isfile(media_path) or
+        rdb.exists(media_path) or
+        rdb.hmget(media_path, "BOX_ID")[0]):
         return
     box_id = box_generator.next()
     if not box_id:
@@ -196,14 +198,13 @@ def send_media_to_box(media_path):
     if not rdb.exists(media_path): return
     box_id = rdb.hmget(media_path, "BOX_ID")[0]
     if not box_id:
-        send_media_to_box.delay(media_path)
-        logwarning("Media path hasn't assigned to a box yet, try again: %s"%(media_path))
-        return
+        generator   = box_generator(rdb, m3u8_media_amount)
+        box_id      = generator.next()
+        assign_media_to_box(rdb, generator, configfile.EXPIRE_MEDIA_TIME, media_path)
     context = zmq.Context()
     socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
-    media_path = str(media_path)
     try:
         infile = open(media_path, "rb")
     except:
