@@ -92,26 +92,26 @@ def run_zmq_SUB_server(rdb):
     rdb.delete(redis_box_media_amount)
     logmsg("Server running...")
     while True:
-            current_time = time.time()
-            if current_time - last_media_update_time >= media_box_update_duration/3:
-                send_media_box_update.delay()
-                last_media_update_time = time.time()
-            string = ''
-            try:
-                # Read envelope with address
-                string = socket.recv_string(zmq.NOBLOCK)
-            except zmq.ZMQError, e:
-                if e.errno == zmq.EAGAIN:
-                    pass
-            if not string: continue
-            topic = string.split(' ', 1)[0]
-            if topic == maintain_topic:
-                process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
-                                        expire_box_time, string)
-            elif topic == verify_topic:
-                process_verify_topic(rdb, redis_box_set, expire_box_time,
-                                     expire_media_time, string)
-            
+        current_time = time.time()
+        if current_time - last_media_update_time >= media_box_update_duration/3:
+            send_media_box_update.delay()
+            last_media_update_time = time.time()
+        string = ''
+        try:
+            # Read envelope with address
+            string = socket.recv_string(zmq.NOBLOCK)
+        except zmq.ZMQError, e:
+            if e.errno == zmq.EAGAIN:
+                pass
+        if not string: continue
+        topic = string.split(' ', 1)[0]
+        if topic == maintain_topic:
+            process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
+                                    expire_box_time, string)
+        elif topic == verify_topic:
+            process_verify_topic(rdb, redis_box_set, expire_box_time,
+                                 expire_media_time, string)
+        
                 
 def expire_box_set_members(rdb):
     redis_box_set = configfile.REDIS_BOX_SET
@@ -153,13 +153,11 @@ def media_sending_process(rdb):
     rdb.delete(SEND_MEDIA_QUEUE_NAME)
     
     while True:
-        media_path = rdb.lpop(SEND_MEDIA_QUEUE_NAME)
-        if not media_path: continue
+        media_path = rdb.blpop(SEND_MEDIA_QUEUE_NAME)
         media_path = str(media_path)
         if not os.path.isfile(media_path):
             logwarning("send_media_to_box: %s file not found"%(media_path))
             continue
-        if not rdb.exists(media_path): continue
         box_id = rdb.hmget(media_path, "BOX_ID")[0]
         if not box_id:
             generator = box_generator(rdb, m3u8_media_amount)
