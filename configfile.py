@@ -7,7 +7,8 @@ MPD_WATCH_PATH              = MPD_READ_DIR
 ### M3U8 Reading and Writing directory
 M3U8_READ_DIR               = "/tmp/hls/output"
 M3U8_WRITE_DIR              = "/tmp/hls/media"
-M3U8_GET_DIR                = "hls/output/"
+M3U8_GET_DIR                = "hls/media/"
+MEDIA_GET_DIR               = "hls/output/"
 BOX_MEDIA_WRITE_DIR         = "/tmp/hls/output"
 M3U8_WATCH_PATH             = M3U8_READ_DIR
 M3U8_MEDIA_AMOUNT           = 12

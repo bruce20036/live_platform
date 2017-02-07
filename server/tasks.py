@@ -27,9 +27,9 @@ def logwarning(msg):
 def mother_m3u8_modify(pathname):
     SERVER_IP           = configfile.SERVER_IP
     SERVER_PORT         = configfile.SERVER_PORT
-    M3U8_WRITE_FOLDER   = configfile.M3U8_WRITE_DIR.rsplit('/', 1)[1]
-    server_http_url     = "http://" + SERVER_IP + ":" + SERVER_PORT + "/" + \
-                          M3U8_WRITE_FOLDER + "/"
+    M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
+    M3U8_GET_DIR        = configfile.M3U8_GET_DIR
+    server_http_url     = "http://" + SERVER_IP + ":" + SERVER_PORT + "/"
     output_dir          = configfile.M3U8_WRITE_DIR + "/" + pathname.rsplit('/',1)[1]
     try:
         fp = open(pathname, "r+")
@@ -42,7 +42,7 @@ def mother_m3u8_modify(pathname):
     # Read each line in file, modify lines and append it to list
     while line:
         if ".m3u8" in line:
-            line = server_http_url + line
+            line = server_http_url + M3U8_GET_DIR + line
         st.append(line)
         line = fp.readline()
     
@@ -95,7 +95,7 @@ def m3u8_trans(pathname):
     logmsg("M3U8_TRANS PATHNAME: %s"%(pathname))
     # Import from configfile
     M3U8_WRITE_DIR      = configfile.M3U8_WRITE_DIR
-    M3U8_GET_DIR        = configfile.M3U8_GET_DIR
+    MEDIA_GET_DIR       = configfile.MEDIA_GET_DIR 
     m3u8_media_amount   = configfile.M3U8_MEDIA_AMOUNT
     SERVER_IP           = configfile.SERVER_IP
     SERVER_PORT         = configfile.SERVER_PORT
@@ -152,7 +152,7 @@ def m3u8_trans(pathname):
                 logmsg("Assign Server IP PORT to media_path: %s"%(media_path))
             # Modify current line
             get_url_prefix = "http://"+ip_s+":"+port_s+"/"
-            line = get_url_prefix + M3U8_GET_DIR + stream_name + "/" + line
+            line = get_url_prefix + MEDIA_GET_DIR + stream_name + "/" + line
             # end if
         outfile.write(line)
         line = infile.readline()
@@ -166,7 +166,7 @@ def update_M3U8(ip_s, port_s, stream_name, time_segment, m3u8_path):
     time_segment format: <time>.ts
     """
     logmsg("UPDATE M3U8:%s. IP:%s PORT:%s. TIME SEGMENT:%s"%(m3u8_path, ip_s, port_s, time_segment))
-    M3U8_GET_DIR = configfile.M3U8_GET_DIR
+    MEDIA_GET_DIR = configfile.MEDIA_GET_DIR
     get_url_prefix = "http://"+ip_s+":"+port_s+"/"
     try:
         fp = open(m3u8_path, "r+")
@@ -178,7 +178,7 @@ def update_M3U8(ip_s, port_s, stream_name, time_segment, m3u8_path):
     line = fp.readline()
     while line:
         if str(time_segment) in line:
-            line = get_url_prefix + M3U8_GET_DIR + stream_name +\
+            line = get_url_prefix + MEDIA_GET_DIR + stream_name +\
                    "/" + time_segment + '\n'
         st.append(line)
         line = fp.readline()
