@@ -1,7 +1,7 @@
 import pyinotify
 import configfile
 import redis
-from server.tasks import logmsg, m3u8_trans, mother_m3u8_modify, send_media_to_box
+from server.tasks import logmsg, m3u8_trans, mother_m3u8_modify
 
 class EventHandler(pyinotify.ProcessEvent):
     def my_init(self, rdb):
