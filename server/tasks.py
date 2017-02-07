@@ -205,7 +205,7 @@ def send_media_to_box(media_path):
     if not box_id:
         generator = box_generator(rdb, m3u8_media_amount)
         assign_media_to_box(rdb, generator, expire_media_time, media_path)
-        
+    box_id = str(box_id)    
     context = zmq.Context()
     socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
