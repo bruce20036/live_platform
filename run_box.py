@@ -12,13 +12,17 @@ GET_IP_URL = 'https://api.ipify.org?format=json'
 def stop_all_process(box_list, BOX_AMOUNT):
     for i in range(BOX_AMOUNT):
         box_list[i].stop()
+        
 
 def start_all_process(rdb, box_list, BOX_AMOUNT):
     for i in range(BOX_AMOUNT):
         box_list[i].start(rdb)
 
+
 def get_ip():
     return str(requests.get(GET_IP_URL, timeout=3).json()["ip"])
+
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
