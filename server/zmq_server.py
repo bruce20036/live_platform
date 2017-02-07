@@ -150,6 +150,7 @@ def media_sending_process(rdb):
     socket  = context.socket(zmq.PUB)
     socket.connect(configfile.ZMQ_XSUB_ADDRESS)
     time.sleep(configfile.ZMQ_SOCKET_BIND_TIME)
+    rdb.delete(SEND_MEDIA_QUEUE_NAME)
     
     while True:
         media_path = rdb.lpop(SEND_MEDIA_QUEUE_NAME)
