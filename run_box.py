@@ -67,21 +67,27 @@ if __name__ == '__main__':
                                   args=(rdb,))
         recycle_process.start()
         while True:
-            check_ip = get_ip()
-            if check_ip == None:
-                IP = check_ip
+            try:
+                check_ip = get_ip()
+                if check_ip == None:
+                    IP = check_ip
+                    stop_all_process(box_list, BOX_AMOUNT)
+                    continue
+                elif IP != check_ip:
+                    print "IP CHANGED: %s -> %s"%(IP, check_ip)
+                    IP = check_ip
+                    stop_all_process(box_list, BOX_AMOUNT)
+                    for i in range(BOX_AMOUNT):
+                        box_list[i].update_IP(IP)
+                start_all_process(rdb, box_list, BOX_AMOUNT)
+            except Exception as e:
+                print e
                 stop_all_process(box_list, BOX_AMOUNT)
-                continue
-            elif IP != check_ip:
-                print "IP CHANGED: %s -> %s"%(IP, check_ip)
-                IP = check_ip
-                stop_all_process(box_list, BOX_AMOUNT)
-                for i in range(BOX_AMOUNT):
-                    box_list[i].update_IP(IP)
-            start_all_process(rdb, box_list, BOX_AMOUNT)
     except KeyboardInterrupt:
         for i in range(BOX_AMOUNT):
             box_list[i].stop()
         recycle_process.terminate()
         recycle_process.join()
-        print("Stop")   
+        print("Stop")
+
+        
