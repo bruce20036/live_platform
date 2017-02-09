@@ -7,7 +7,15 @@ import redis
 import requests
 from box.zmq_box import Box, recycle_expired_boxes
 
-GET_IP_URL = 'https://api.ipify.org?format=json'
+GET_IP_URL = [
+              'http://ipecho.net/plain',
+              'http://bot.whatismyipaddress.com',
+              'http://icanhazip.com',
+              # 'https://api.ipify.org',
+              # 'https://myexternalip.com/raw',
+              # 'https://ifconfig.co/ip',
+              ]   
+
 
 def stop_all_process(box_list, BOX_AMOUNT):
     for i in range(BOX_AMOUNT):
@@ -20,8 +28,16 @@ def start_all_process(rdb, box_list, BOX_AMOUNT):
 
 
 def get_ip():
-    return str(requests.get(GET_IP_URL, timeout=3).json()["ip"])
-
+    ip = None
+    for url in GET_IP_URL:
+        try:
+            ip = str(requests.get(url, timeout=3).text.replace('\n', ''))
+            if len(ip.split('.')) == 4:
+                return ip
+        except  requests.exceptions.RequestException as e:
+            print e
+            print "get_ip: %s fails, try next url."
+    return ip
 
 
 if __name__ == '__main__':
@@ -51,14 +67,12 @@ if __name__ == '__main__':
                                   args=(rdb,))
         recycle_process.start()
         while True:
-            check_ip = ''
-            try:
-                check_ip = get_ip()
-            except  requests.exceptions.RequestException as e:
-                print e
+            check_ip = get_ip()
+            if check_ip == None:
+                IP = check_ip
                 stop_all_process(box_list, BOX_AMOUNT)
                 continue
-            if IP != check_ip:
+            elif IP != check_ip:
                 print "IP CHANGED: %s -> %s"%(IP, check_ip)
                 IP = check_ip
                 stop_all_process(box_list, BOX_AMOUNT)
