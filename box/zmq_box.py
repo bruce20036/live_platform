@@ -21,7 +21,7 @@ def check_server_port_available(ip, port):
     except requests.exceptions.RequestException as e:
         print e
         return False
-    return True if response in AVAILABLE_STATUS_CODE else False
+    return True if response.status_code in AVAILABLE_STATUS_CODE else False
 
 class Box(object):
     def __init__(self, box_id, num, IP, PORT):
