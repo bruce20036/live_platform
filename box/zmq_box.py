@@ -16,9 +16,7 @@ AVAILABLE_STATUS_CODE.append(403)
 def check_server_port_available(ip, port):
     server_url = "http://" + ip + ":" + port
     try:
-        print "CHECKING SERVER..."
         response = requests.get(server_url, timeout=3)
-        print "SERVER RESPONSE's STATUS CODE: %d"%(response.status_code)
     except requests.exceptions.RequestException as e:
         print e
         return False
