@@ -6,8 +6,22 @@ import subprocess
 import multiprocessing
 import configfile
 import logging
+import requests
 from multiprocessing import Process
-from server.tasks import logmsg
+
+AVAILABLE_STATUS_CODE = [i for i in range(200, 300)] #ALL 2XX
+AVAILABLE_STATUS_CODE.append(403)
+
+def check_server_port_available(ip, port):
+    server_url = "http://" + ip + ":" + port
+    try:
+        print "CHECKING SERVER..."
+        response = requests.get(server_url, timeout=3)
+        print "SERVER RESPONSE's STATUS CODE: %d"%(response.status_code)
+    except requests.exceptions.RequestException as e:
+        print e
+        return False
+    return True if response in AVAILABLE_STATUS_CODE else False
 
 class Box(object):
     def __init__(self, box_id, num, IP, PORT):
@@ -43,8 +57,15 @@ class Box(object):
         self.publish_process.terminate()
         self.publish_process.join()
         self.publish_process = None
+        
+    def self_check(self):
+        if not check_server_port_available(self.IP, self.PORT):
+            return False
+        return True
     
     def start(self, rdb):
+        if not self.self_check():
+            return
         if not self.publish_process or not self.publish_process.is_alive():
             self.start_publish_process(rdb)
         if not self.media_process or not self.media_process.is_alive():

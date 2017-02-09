@@ -20,7 +20,7 @@ GET_IP_URL = [
 def stop_all_process(box_list, BOX_AMOUNT):
     for i in range(BOX_AMOUNT):
         box_list[i].stop()
-        
+
 
 def start_all_process(rdb, box_list, BOX_AMOUNT):
     for i in range(BOX_AMOUNT):
@@ -34,7 +34,7 @@ def get_ip():
             ip = str(requests.get(url, timeout=3).text.replace('\n', ''))
             if len(ip.split('.')) == 4:
                 return ip
-        except  requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as e:
             print e
             print "get_ip: %s fails, try next url."
     return ip
