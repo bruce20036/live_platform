@@ -7,6 +7,7 @@ import multiprocessing
 import configfile
 import logging
 import requests
+from server.tasks import logmsg
 from multiprocessing import Process
 
 AVAILABLE_STATUS_CODE = [i for i in range(200, 300)] #ALL 2XX
