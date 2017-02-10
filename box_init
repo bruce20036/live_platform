@@ -18,6 +18,8 @@ RAMDISK_PATH=/tmp/hls
 # Nginx SETTINGS
 NGINX_PATH=/usr/local/nginx/sbin/nginx
 NGINX_HTTP_PORT=8000
+# REDIS SETTINGS
+REDIS_PIDFILE=/var/run/redis_6379.pid
 # PACKAGE SETTINGS
 PACKAGE_PATH=/root/live_platform
 BOX_FILE=run_box.py
@@ -32,6 +34,8 @@ start() {
 	mount -t tmpfs -o size=${RAMDISK_SIZE}M tmpfs ${RAMDISK_PATH}
 	# Start Nginx server
 	/usr/local/nginx/sbin/nginx
+    # Start Redis
+    if [ ! -e "$REDIS_PIDFILE" ]; then /etc/init.d/redis_6379 start; fi;
 	# Start box process in background
 	if [ -e $PACKAGE_PATH ];then
 		nohup python ${PACKAGE_PATH}/${BOX_FILE} ${NGINX_HTTP_PORT} ${PROCESS_NUMBER} > ${LOGFILE} 2>&1&
