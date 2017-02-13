@@ -39,9 +39,7 @@ def process_maintain_topic(rdb, redis_box_set, redis_box_media_amount,
     topic, box_id, box_ip, box_port, media_amount = string.split(" ")
     if box_id[:4] != 'box-':
         return
-    if not rdb.exists(box_id):
-        # ADD hash to redis, set box_id as key
-        rdb.hmset(box_id, {"IP":box_ip, "PORT":box_port})
+    rdb.hmset(box_id, {"IP":box_ip, "PORT":box_port})
     rdb.zadd(redis_box_set, int(time.time()) + expire_box_time, box_id)
     rdb.zadd(redis_box_media_amount, int(media_amount), box_id)
     logmsg(string)
