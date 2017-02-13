@@ -8,9 +8,9 @@ import requests
 from box.zmq_box import Box, recycle_expired_boxes
 
 GET_IP_URL = [
-              'http://ipecho.net/plain',
               'http://bot.whatismyipaddress.com',
               'http://icanhazip.com',
+              'http://ipecho.net/plain',
               # 'https://api.ipify.org',
               # 'https://myexternalip.com/raw',
               # 'https://ifconfig.co/ip',
